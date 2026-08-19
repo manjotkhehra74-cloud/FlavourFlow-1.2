@@ -1,0 +1,149 @@
+# Pulse HR — Codemagic Android APK build
+# Free tier (Mac mini M2, 500 min/month), JDK 17, Expo SDK 51.
+
+workflows:
+  android-apk:
+    name: Pulse HR — Android APK
+    max_build_duration: 60
+    working_directory: mobile
+    environment:
+      vars:
+        EXPO_PUBLIC_API_URL: https://pulsehr1.duckdns.org/api
+        CI: "1"
+        GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8"
+      node: 20.11.1
+      java: 17
+    cache:
+      cache_paths:
+        - $HOME/.npm
+        - ~/.gradle/caches
+        - android/.gradle
+      # NOTE: node_modules is intentionally NOT cached — we saw it carry
+      # over old SDK 53 packages (@expo/log-box@57) across commits and break
+      # the SDK 51 build. A fresh `npm install` is fast on Codemagic.
+    scripts:
+      - name: Show environment
+        script: |
+          set -e
+          echo "Node $(node -v)  npm $(npm -v)"
+          java -version
+
+      - name: Clean slate + install npm dependencies
+        script: |
+          set -e
+          # Nuke any stale node_modules (cache or previous build) so an old
+          # SDK 53 @expo/log-box cannot survive from a previous checkout.
+          rm -rf node_modules package-lock.json
+          # Explicitly clear npm's local cache too, just in case.
+          npm cache clean --force 2>/dev/null || true
+          npm install --no-audit --no-fund --legacy-peer-deps
+
+      - name: Hard-delete any SDK 53 packages that might appear
+        script: |
+          set -e
+          # Belt and braces. Even if something pulls @expo/log-box or
+          # @expo/dom-webview (both SDK 53+ and incompatible with SDK 51),
+          # remove them before the native build sees their build.gradle.
+          rm -rf node_modules/@expo/log-box node_modules/@expo/dom-webview
+          for d in node_modules/*/node_modules/@expo/log-box \
+                   node_modules/*/node_modules/@expo/dom-webview \
+                   node_modules/@*/*/node_modules/@expo/log-box \
+                   node_modules/@*/*/node_modules/@expo/dom-webview; do
+            [ -d "$d" ] && rm -rf "$d" && echo "removed nested: $d"
+          done
+          echo "--- final @expo versions ---"
+          for p in expo expo-modules-core @expo/metro-runtime @expo/log-box @expo/dom-webview; do
+            if [ -f "node_modules/$p/package.json" ]; then
+              echo "$p = $(node -p "require('$p/package.json').version" 2>/dev/null || echo present)"
+            else
+              echo "$p = (absent)"
+            fi
+          done
+          test ! -d node_modules/@expo/log-box || { echo "FATAL: log-box still present"; exit 1; }
+          test ! -d node_modules/@expo/dom-webview || { echo "FATAL: dom-webview still present"; exit 1; }
+
+      - name: Guard against SDK 53 packages accidentally entering the tree
+        script: |
+          set -e
+          # These packages (newer Expo SDK 53 versions) break SDK 51's Gradle build.
+          # Their presence means package.json / npm resolved a wrong major version.
+          for bad_pkg in "@expo/log-box" "@expo/dom-webview"; do
+            if test -d "node_modules/$bad_pkg"; then
+              ver=$(node -p "require('$bad_pkg/package.json').version" 2>/dev/null || echo unknown)
+              echo "ERROR: $bad_pkg@$ver installed — this is an SDK 53 package and breaks the build."
+              echo "Fix the version range in package.json and reinstall."
+              exit 1
+            fi
+          done
+          echo "OK: no known-bad @expo packages present"
+          node -p "'expo@' + require('expo/package.json').version"
+          node -p "'expo-modules-core@' + require('expo-modules-core/package.json').version"
+          node -p "'@expo/metro-runtime@' + require('@expo/metro-runtime/package.json').version"
+
+      - name: Remove incompatible @expo/dom-webview (SDK 53 pkg breaks SDK 51)
+        script: |
+          set -e
+          rm -rf node_modules/@expo/dom-webview
+          test ! -d node_modules/@expo/dom-webview && echo "OK: dom-webview removed"
+
+      - name: Generate native Android project (local Expo CLI)
+        script: |
+          set -e
+          node node_modules/expo/bin/cli prebuild --platform android --no-install --clean
+          ! grep -r "dom-webview" android/settings.gradle android/app/build.gradle 2>/dev/null
+
+      - name: Patch build for SDK 51 / Codemagic compatibility
+        # No `set -e`: many grep/sed here are allowed to return non-zero.
+        script: |
+          # 1) Pin Android Gradle Plugin to 8.1.4 (known-good for SDK 51).
+          sed -i.bak -E "s|classpath\\(['\"]com\\.android\\.tools\\.build:gradle(:[^'\"]+)?['\"]\\)|classpath('com.android.tools.build:gradle:8.1.4')|g" android/build.gradle || true
+          echo "--- AGP classpath now ---"
+          grep -n "com.android.tools.build:gradle" android/build.gradle || true
+
+          # 2) Skip useExpoPublishing() in expo's own build.gradle.
+          sed -i.bak "s/^useExpoPublishing()/\\/\\/ useExpoPublishing() skipped for APK build/" node_modules/expo/android/build.gradle || true
+          echo "--- expo publishing call ---"
+          grep -n useExpoPublishing node_modules/expo/android/build.gradle || true
+
+          # 3) Comment out `from components.release` inside expo-modules-core.
+          CORE=node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
+          sed -i.bak "s|from components.release|// from components.release (disabled for APK build)|g" "$CORE" || true
+          echo "--- patched core plugin publish block ---"
+          grep -n "components.release" "$CORE" || true
+
+          # Sanity check: braces must still balance.
+          python3 - <<'PY'
+          c = open('node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle').read()
+          assert c.count('{') == c.count('}'), "Braces unbalanced in ExpoModulesCorePlugin.gradle"
+          active = [l for l in c.splitlines() if l.strip().startswith('from components.release')]
+          assert not active, "Offending line still active: " + str(active)
+          print("OK: core plugin patches applied and braces balanced")
+          PY
+
+      - name: Build release APK
+        script: |
+          set -e
+          cd android
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease --no-daemon --warning-mode=summary 2>&1 | tee /tmp/gradle.log
+          if grep -q "BUILD FAILED" /tmp/gradle.log; then
+            echo "================================================"
+            echo " Relevant error lines:"
+            echo "================================================"
+            grep -nE "\\* What went wrong|Caused by:|Could not|compileSdkVersion|FAILURE:|error:" /tmp/gradle.log | head -40
+            exit 1
+          fi
+
+      - name: Collect APK
+        script: |
+          set -e
+          mkdir -p build/outputs
+          find android/app/build/outputs/apk -name "*.apk" -exec cp {} build/outputs/ \;
+          ls -lh build/outputs/
+    artifacts:
+      - build/outputs/**/*.apk
+      - android/app/build/outputs/**/*.apk
+    publishing:
+      email:
+        recipients:
+          - your-email@example.com   # TODO apna email pao
