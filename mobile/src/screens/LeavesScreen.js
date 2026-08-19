@@ -1,16 +1,15 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import { Api } from '../api/client';
-import { Screen, Card, Badge, Button, Row, EmptyState } from '../components/UI';
+import { Screen, Card, Badge, Button, Row, EmptyState, NavHeader } from '../components/UI';
 import { colors, fmtDate } from '../theme';
 
 const TYPES = [
-  { key: 'casual', label: 'Casual', color: '#0d9488' },
-  { key: 'sick', label: 'Sick', color: '#dc2626' },
-  { key: 'earned', label: 'Earned', color: '#2563eb' },
-  { key: 'optional', label: 'Optional', color: '#7c3aed' },
+  { key: 'casual', label: 'Casual', color: colors.teal },
+  { key: 'sick', label: 'Sick', color: colors.red },
+  { key: 'earned', label: 'Earned', color: colors.blue },
+  { key: 'optional', label: 'Optional', color: colors.primary },
 ];
 
 export default function LeavesScreen({ navigation }) {
@@ -20,8 +19,8 @@ export default function LeavesScreen({ navigation }) {
 
   const load = useCallback(async () => {
     const [b, m] = await Promise.all([Api.leaveBalances(), Api.myLeaves()]);
-    setBalances(b.balances);
-    setRequests(m.requests);
+    setBalances(b.balances || {});
+    setRequests(m.requests || []);
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
@@ -29,12 +28,7 @@ export default function LeavesScreen({ navigation }) {
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
-        <Text style={styles.title}>Leave</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
+      <NavHeader title="Leave" navigation={navigation} />
       <FlatList
         data={requests}
         keyExtractor={(r) => String(r.id)}
@@ -44,8 +38,8 @@ export default function LeavesScreen({ navigation }) {
           <View>
             <Card>
               <Text style={styles.label}>Balances</Text>
-              <Row style={{ gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-                {TYPES.map(t => {
+              <Row style={{ marginTop: 10, flexWrap: 'wrap' }}>
+                {TYPES.map((t) => {
                   const b = balances[t.key] || { remaining: 0, total: 0, used: 0 };
                   return (
                     <View key={t.key} style={[styles.bal, { borderColor: t.color + '55' }]}>
@@ -63,26 +57,24 @@ export default function LeavesScreen({ navigation }) {
         renderItem={({ item }) => (
           <Card>
             <Row style={{ justifyContent: 'space-between' }}>
-              <Text style={{ fontWeight: '800', textTransform: 'capitalize' }}>{item.leave_type} leave · {item.days}d</Text>
+              <Text style={{ fontWeight: '800', textTransform: 'capitalize', color: colors.text }}>{item.leave_type} leave · {item.days}d</Text>
               <Badge text={item.status} />
             </Row>
             <Text style={{ color: colors.subtext, marginTop: 6 }}>
               {fmtDate(item.from_date)} → {fmtDate(item.to_date)}
             </Text>
-            <Text style={{ marginTop: 6 }}>{item.reason}</Text>
+            <Text style={{ marginTop: 6, color: colors.text }}>{item.reason}</Text>
           </Card>
         )}
       />
       <View style={{ padding: 16 }}>
-        <Button title="+ Apply for leave" onPress={() => navigation.navigate('NewLeave', { onCreated: load })} />
+        <Button title="Apply for leave" icon="add" onPress={() => navigation.navigate('NewLeave', { onCreated: load })} />
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: colors.brand, gap: 14 },
-  title: { color: '#fff', fontSize: 18, fontWeight: '800', flex: 1 },
   label: { color: colors.subtext, fontWeight: '700', fontSize: 13 },
   bal: { width: '23%', minWidth: 70, borderWidth: 1, borderRadius: 12, padding: 10, alignItems: 'center', margin: 2 },
   sectionTitle: { fontSize: 15, fontWeight: '800', color: colors.text, marginHorizontal: 20, marginTop: 10, marginBottom: 4 },

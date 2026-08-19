@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { ScrollView, Alert, Text, View, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ScrollView, Alert, Text, StyleSheet } from 'react-native';
 import { Api } from '../api/client';
-import { Screen, Input, Button, Row } from '../components/UI';
-import { colors } from '../theme';
+import { Screen, Input, Button, Row, Card, NavHeader, Chip } from '../components/UI';
+import { colors, spacing } from '../theme';
 
-const BADGES = ['Team Welcome', 'Ship It', 'Kudos', 'Helping Hand', 'On Fire', null];
+const BADGES = ['Team Welcome', 'Ship It', 'Kudos', 'Helping Hand', 'On Fire'];
 
 export default function NewPostScreen({ navigation, route }) {
   const [body, setBody] = useState('');
@@ -25,32 +24,35 @@ export default function NewPostScreen({ navigation, route }) {
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
-        <Text style={styles.title}>Create post</Text>
-      </View>
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
-        <Input label="What's on your mind?" value={body} onChangeText={setBody}
-          multiline style={{ minHeight: 140, textAlignVertical: 'top' }} placeholder="Share an update, kudos, or announcement..." />
-        <Text style={styles.label}>Attach a badge (optional)</Text>
-        <Row style={{ gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-          {BADGES.map(b => (
-            <TouchableOpacity key={b || 'none'} onPress={() => setBadge(b)}
-              style={[styles.chip, badge === b && styles.chipActive]}>
-              <Text style={[badge === b && { color: '#fff' }, { fontWeight: '700' }]}>{b || 'None'}</Text>
-            </TouchableOpacity>
-          ))}
-        </Row>
-        <Button title={loading ? 'Posting...' : 'Publish post'} onPress={submit} disabled={loading} />
+      <NavHeader title="Create post" navigation={navigation} mode="back" />
+      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        <Card>
+          <Text style={styles.lead}>Share an update, kudos, or announcement with the team.</Text>
+          <Input
+            label="What's on your mind?"
+            icon="create-outline"
+            value={body}
+            onChangeText={setBody}
+            multiline
+            placeholder="Share an update..."
+          />
+          <Text style={styles.label}>Attach a badge (optional)</Text>
+          <Row style={styles.chips}>
+            <Chip label="None" active={badge === null} onPress={() => setBadge(null)} />
+            {BADGES.map((b) => (
+              <Chip key={b} label={b} active={badge === b} onPress={() => setBadge(b)} />
+            ))}
+          </Row>
+          <Button title={loading ? 'Posting...' : 'Publish post'} onPress={submit} disabled={loading} loading={loading} icon="megaphone-outline" />
+        </Card>
       </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: colors.brand, gap: 14 },
-  title: { color: '#fff', fontSize: 18, fontWeight: '800' },
-  label: { fontSize: 13, fontWeight: '600', color: colors.subtext, marginBottom: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border },
-  chipActive: { backgroundColor: colors.brand, borderColor: colors.brand },
+  body: { padding: spacing.lg, paddingBottom: 40 },
+  lead: { color: colors.subtext, marginBottom: 16, lineHeight: 20 },
+  label: { fontSize: 12, fontWeight: '700', color: colors.subtext, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  chips: { flexWrap: 'wrap', marginBottom: 16 },
 });

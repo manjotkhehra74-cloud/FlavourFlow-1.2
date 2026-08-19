@@ -16,9 +16,11 @@ workflows:
     cache:
       cache_paths:
         - $HOME/.npm
-        - node_modules
         - ~/.gradle/caches
         - android/.gradle
+      # NOTE: node_modules is intentionally NOT cached — we saw it carry
+      # over old SDK 53 packages (@expo/log-box@57) across commits and break
+      # the SDK 51 build. A fresh `npm install` is fast on Codemagic.
     scripts:
       - name: Show environment
         script: |
@@ -26,10 +28,39 @@ workflows:
           echo "Node $(node -v)  npm $(npm -v)"
           java -version
 
-      - name: Install npm dependencies
+      - name: Clean slate + install npm dependencies
         script: |
           set -e
+          # Nuke any stale node_modules (cache or previous build) so an old
+          # SDK 53 @expo/log-box cannot survive from a previous checkout.
+          rm -rf node_modules package-lock.json
+          # Explicitly clear npm's local cache too, just in case.
+          npm cache clean --force 2>/dev/null || true
           npm install --no-audit --no-fund --legacy-peer-deps
+
+      - name: Hard-delete any SDK 53 packages that might appear
+        script: |
+          set -e
+          # Belt and braces. Even if something pulls @expo/log-box or
+          # @expo/dom-webview (both SDK 53+ and incompatible with SDK 51),
+          # remove them before the native build sees their build.gradle.
+          rm -rf node_modules/@expo/log-box node_modules/@expo/dom-webview
+          for d in node_modules/*/node_modules/@expo/log-box \
+                   node_modules/*/node_modules/@expo/dom-webview \
+                   node_modules/@*/*/node_modules/@expo/log-box \
+                   node_modules/@*/*/node_modules/@expo/dom-webview; do
+            [ -d "$d" ] && rm -rf "$d" && echo "removed nested: $d"
+          done
+          echo "--- final @expo versions ---"
+          for p in expo expo-modules-core @expo/metro-runtime @expo/log-box @expo/dom-webview; do
+            if [ -f "node_modules/$p/package.json" ]; then
+              echo "$p = $(node -p "require('$p/package.json').version" 2>/dev/null || echo present)"
+            else
+              echo "$p = (absent)"
+            fi
+          done
+          test ! -d node_modules/@expo/log-box || { echo "FATAL: log-box still present"; exit 1; }
+          test ! -d node_modules/@expo/dom-webview || { echo "FATAL: dom-webview still present"; exit 1; }
 
       - name: Guard against SDK 53 packages accidentally entering the tree
         script: |

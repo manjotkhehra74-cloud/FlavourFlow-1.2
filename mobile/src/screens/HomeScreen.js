@@ -1,166 +1,254 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Alert } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import * as Location from 'expo-location';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Alert,
+} from 'react-native';
+import { useFocusEffect, DrawerActions } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { Screen, Card, Button, Row, StatPill, Badge } from '../components/UI';
-import { colors, fmtTime } from '../theme';
+import { usePunch } from '../context/PunchContext';
+import {
+  Screen, Card, Row, QuickTile, SectionTitle,
+} from '../components/UI';
+import { colors, radius, spacing, gradients, greeting, fmtTime } from '../theme';
+import { scheduleDailyReminder, ensureNotificationPermission } from '../utils/permissions';
 
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
+  const punch = usePunch();
   const [summary, setSummary] = useState(null);
   const [today, setToday] = useState(null);
+  const [events, setEvents] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const isManager = user?.role !== 'employee';
+  const isPrivileged = user?.role !== 'employee';
 
   const load = useCallback(async () => {
     try {
       const [s, t] = await Promise.all([Api.summary(), Api.attendanceToday()]);
       setSummary(s);
       setToday(t.today);
-    } catch (e) {
-      Alert.alert('Error', e.message);
-    }
+      if (punch.setToday) punch.setToday(t.today);
+      try {
+        const ev = await Api.events();
+        const list = (ev.today || []).map((e) => ({
+          type: e.event === 'birthday' ? 'birthday' : 'anniversary',
+          title: e.event === 'birthday' ? `${e.name}'s birthday` : `${e.name}'s work anniversary`,
+          subtitle: e.years ? `${e.years} years` : (e.designation || ''),
+        }));
+        setEvents(list);
+      } catch {}
+    } catch (e) { Alert.alert('Error', e.message); }
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const onRefresh = async () => {
-    setRefreshing(true); await load(); setRefreshing(false);
-  };
+  useEffect(() => {
+    const unsub = punch.subscribe?.(load);
+    return () => { if (typeof unsub === 'function') unsub(); };
+  }, [punch, load]);
 
-  const clock = async (action) => {
-    setBusy(true);
-    try {
-      let coords = {};
-      if (action === 'in') {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === 'granted') {
-          const loc = await Location.getCurrentPositionAsync({}).catch(() => null);
-          if (loc) coords = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
-        }
-      }
-      await Api.clock(action, coords);
-      await load();
-    } catch (e) {
-      Alert.alert('Error', e.message);
-    } finally {
-      setBusy(false);
-    }
-  };
+  useEffect(() => {
+    (async () => { await ensureNotificationPermission(); await scheduleDailyReminder(10, 0); })();
+  }, []);
 
-  const initial = (user?.name || '').split(' ').map(w => w[0]).slice(0, 2).join('');
+  const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
+  const initial = (user?.name || '').split(' ').map((w) => w[0]).slice(0, 2).join('');
+  const hasPunched = !!today?.clock_in;
+  const month = summary?.monthStats || {};
+  const pendingCount = isPrivileged
+    ? (summary?.pending?.teamApprovals || 0) + (summary?.pendingLeaves || 0)
+    : (summary?.pending?.attendanceRequests || 0) + (summary?.pending?.leaves || 0);
 
   return (
-    <Screen style={{ backgroundColor: colors.bg }}>
-      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.hi}>Hi {user?.name?.split(' ')[0]}!</Text>
-            <Text style={styles.subHi}>{user?.designation} · {user?.emp_code}</Text>
-          </View>
-          <View style={styles.avatar}><Text style={{ color: '#fff', fontWeight: '800', fontSize: 18 }}>{initial}</Text></View>
-        </View>
-
-        <Card>
-          <Row style={{ justifyContent: 'space-between' }}>
-            <View>
-              <Text style={styles.label}>Today's attendance</Text>
-              <Text style={styles.big}>
-                {today ? (today.status === 'late' ? '⏰ Marked late' : `✅ ${today.status.replace('_', ' ')}`) : 'Not marked yet'}
-              </Text>
-              {today?.clock_in ? <Text style={styles.mini}>In: {fmtTime(today.clock_in)}{today.clock_out ? `  ·  Out: ${fmtTime(today.clock_out)}` : ''}</Text> : null}
-            </View>
-            <Badge text={today?.status || 'pending'} tone="solid" />
-          </Row>
-          <Row style={{ marginTop: 14, gap: 10 }}>
-            {!today?.clock_in ? (
-              <Button title="📷 Mark attendance" onPress={() => clock('in')} style={{ flex: 1 }} disabled={busy} />
-            ) : !today?.clock_out ? (
-              <Button title="Clock out" variant="outline" onPress={() => clock('out')} style={{ flex: 1 }} disabled={busy} />
-            ) : (
-              <Text style={{ color: colors.subtext }}>You're all done for today. 🌙</Text>
-            )}
-          </Row>
-        </Card>
-
-        <Card>
-          <Text style={styles.label}>This month ({summary?.month})</Text>
-          <Row style={{ gap: 10, marginTop: 10 }}>
-            <StatPill label="Present" value={summary?.monthStats?.present || 0} color={colors.green} />
-            <StatPill label="Late" value={summary?.monthStats?.late || 0} color={colors.orange} />
-            <StatPill label="WFH" value={summary?.monthStats?.wfh || 0} color={colors.blue} />
-          </Row>
-        </Card>
-
-        <Text style={styles.sectionTitle}>Quick actions</Text>
-        <View style={styles.grid}>
-          <QuickTile icon="calendar-outline" label="Apply leave" color={colors.purple} onPress={() => navigation.navigate('Leaves')} />
-          <QuickTile icon="time-outline" label="Regularise" color={colors.orange} onPress={() => navigation.navigate('AttendanceRequests')} />
-          <QuickTile icon="people-outline" label="Team" color={colors.teal} onPress={() => navigation.navigate('Team')} />
-          <QuickTile icon="gift-outline" label="Wishes" color={colors.pink} onPress={() => navigation.navigate('Social')} />
-          <QuickTile icon="headset-outline" label="Helpdesk" color={colors.blue} onPress={() => navigation.navigate('Helpdesk')} />
-          <QuickTile icon="document-text-outline" label="Profile" color={colors.brand} onPress={() => navigation.navigate('Profile', { id: user.id })} />
-        </View>
-
-        {isManager ? (
-          <Card style={{ backgroundColor: colors.brand }}>
-            <Text style={[styles.label, { color: '#a7f3d0' }]}>Manager dashboard</Text>
-            <Row style={{ gap: 10, marginTop: 10 }}>
-              <StatPill label="Team size" value={summary?.teamCount || 0} color={colors.brand} />
-              <StatPill label="Present today" value={summary?.teamPresentToday || 0} color={colors.green} />
-              <StatPill label="Pending" value={summary?.pending?.teamApprovals || 0} color={colors.orange} />
-            </Row>
-            <TouchableOpacity style={styles.approvalBtn} onPress={() => navigation.navigate('Approvals')}>
-              <Text style={{ color: '#fff', fontWeight: '700' }}>Review approvals →</Text>
+    <Screen>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />}
+      >
+        <LinearGradient
+          colors={['#1E1B4B', '#4C1D95']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
+          <View style={styles.headerTop}>
+            <TouchableOpacity
+              style={styles.menuBtn}
+              onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+            >
+              <Ionicons name="menu" size={20} color="#fff" />
             </TouchableOpacity>
-          </Card>
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={styles.greeting}>{greeting()}{user?.name ? ', ' + user.name.split(' ')[0] : ''} 👋</Text>
+              <Text style={styles.role}>{user?.designation || user?.role || 'Member'}</Text>
+            </View>
+            <TouchableOpacity onPress={() => navigation.navigate('Profile', { id: user.id })}>
+              <LinearGradient colors={gradients.brand} style={styles.avatar}>
+                <Text style={styles.avatarText}>{initial}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.punchCard}>
+            <View style={{ flex: 1, paddingRight: 10 }}>
+              <Text style={styles.punchLabel}>Today's attendance</Text>
+              <Text style={styles.punchValue}>{hasPunched ? 'Punched in' : 'Not marked yet'}</Text>
+              {hasPunched ? (
+                <Text style={styles.punchTime}>In: {fmtTime(today.clock_in)}  {today.status ? `· ${today.status.toUpperCase()}` : ''}</Text>
+              ) : (
+                <Text style={styles.punchTime}>{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })}</Text>
+              )}
+            </View>
+            <TouchableOpacity
+              onPress={() => punch.openPunch({ today })}
+              style={styles.punchBtn}
+              activeOpacity={0.85}
+            >
+              <LinearGradient colors={gradients.brand} style={styles.punchBtnGrad}>
+                <Ionicons name={hasPunched ? 'log-out-outline' : 'finger-print-outline'} size={26} color="#fff" />
+                <Text style={styles.punchBtnText}>{hasPunched ? 'Punch out' : 'Punch in'}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+
+        <View style={styles.statsRow}>
+          <StatMini label="Present" value={month.present ?? 0} color={colors.green} icon="checkmark-circle" />
+          <StatMini label="Late" value={month.late ?? 0} color={colors.orange} icon="time" />
+          <StatMini label="WFH" value={month.wfh ?? 0} color={colors.blue} icon="home" />
+          <StatMini label="Leaves" value={month.on_leave ?? 0} color={colors.primary} icon="calendar" />
+        </View>
+
+        {isPrivileged ? (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate('Approvals')}
+            style={{ marginHorizontal: spacing.lg, marginTop: spacing.md }}
+          >
+            <LinearGradient colors={gradients.brand} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.banner}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.bannerTitle}>Stay on track! 📋</Text>
+                <Text style={styles.bannerText}>{pendingCount} approvals pending</Text>
+              </View>
+              <View style={styles.bannerCta}>
+                <Text style={styles.bannerCtaText}>Review</Text>
+                <Ionicons name="arrow-forward" size={14} color={colors.primary} />
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
         ) : null}
 
-        <View style={{ height: 30 }} />
+        <View style={{ padding: spacing.lg, paddingTop: 0 }}>
+          <SectionTitle>Quick Access</SectionTitle>
+          <View style={styles.tilesWrap}>
+            <QuickTile icon="calendar-outline" label="Apply leave" color={colors.primary}
+              onPress={() => navigation.navigate('NewLeave')} />
+            <QuickTile icon="time-outline" label="Regularise" color={colors.orange}
+              onPress={() => navigation.navigate('NewAttendance')} />
+            <QuickTile icon="people-outline" label="Team" color={colors.teal}
+              onPress={() => navigation.navigate('Team')} />
+            <QuickTile icon="gift-outline" label="Wishes" color={colors.pink}
+              onPress={() => navigation.navigate('Social')} />
+            <QuickTile icon="headset-outline" label="Helpdesk" color={colors.blue}
+              onPress={() => navigation.navigate('Helpdesk')} />
+            <QuickTile icon="document-text-outline" label="Profile" color={colors.primary}
+              onPress={() => navigation.navigate('Profile', { id: user.id })} />
+            {user?.role === 'admin' ? (
+              <QuickTile icon="people-circle" label="Employees" color={colors.navy}
+                onPress={() => navigation.navigate('AdminUsers')} />
+            ) : null}
+            <QuickTile icon="shield-checkmark" label="Permissions" color={colors.primary}
+              onPress={() => navigation.navigate('Permissions')} />
+          </View>
+
+          {events.length > 0 ? (
+            <>
+              <SectionTitle right={<TouchableOpacity onPress={() => navigation.navigate('Social')}><Text style={styles.link}>View all</Text></TouchableOpacity>}>
+                Today
+              </SectionTitle>
+              <Card>
+                {events.map((e, i) => (
+                  <Row key={i} style={{ paddingVertical: 8, borderBottomWidth: i < events.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
+                    <View style={[styles.eventIcon, { backgroundColor: (e.type === 'birthday' ? colors.pink : colors.primary) + '18' }]}>
+                      <Ionicons name={e.type === 'birthday' ? 'gift-outline' : 'megaphone-outline'}
+                        size={18} color={e.type === 'birthday' ? colors.pink : colors.primary} />
+                    </View>
+                    <View style={{ flex: 1, marginLeft: 10 }}>
+                      <Text style={{ fontWeight: '700', color: colors.text }}>{e.title}</Text>
+                      {e.subtitle ? <Text style={{ color: colors.subtext, fontSize: 12 }}>{e.subtitle}</Text> : null}
+                    </View>
+                  </Row>
+                ))}
+              </Card>
+            </>
+          ) : null}
+        </View>
       </ScrollView>
     </Screen>
   );
 }
 
-function QuickTile({ icon, label, color, onPress }) {
+function StatMini({ label, value, color, icon }) {
   return (
-    <TouchableOpacity style={styles.tile} onPress={onPress} activeOpacity={0.8}>
-      <View style={[styles.tileIcon, { backgroundColor: color + '1a' }]}>
-        <Ionicons name={icon} size={22} color={color} />
+    <View style={styles.statMini}>
+      <View style={[styles.statIcon, { backgroundColor: color + '18' }]}>
+        <Ionicons name={icon} size={16} color={color} />
       </View>
-      <Text style={styles.tileLabel}>{label}</Text>
-    </TouchableOpacity>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8,
+    paddingTop: 52,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: 80,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
   },
-  hi: { fontSize: 24, fontWeight: '900', color: colors.text },
-  subHi: { color: colors.subtext, marginTop: 2 },
-  avatar: {
-    width: 48, height: 48, borderRadius: 24, backgroundColor: colors.brand,
-    alignItems: 'center', justifyContent: 'center',
+  headerTop: { flexDirection: 'row', alignItems: 'center' },
+  menuBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
+  greeting: { color: '#E0E7FF', fontSize: 14 },
+  role: { color: '#fff', fontSize: 18, fontWeight: '800', marginTop: 2 },
+  avatar: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  punchCard: {
+    marginTop: 18,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
-  label: { color: colors.subtext, fontWeight: '600', fontSize: 13 },
-  big: { fontSize: 20, fontWeight: '800', color: colors.text, marginTop: 4 },
-  mini: { color: colors.subtext, marginTop: 4, fontSize: 12 },
-  sectionTitle: { fontSize: 15, fontWeight: '800', color: colors.text, marginHorizontal: 20, marginTop: 16, marginBottom: 8 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12, gap: 10, justifyContent: 'space-between' },
-  tile: {
-    width: '30%', backgroundColor: '#fff', borderRadius: 16, padding: 14, alignItems: 'center',
-    margin: 4, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
+  punchLabel: { color: '#C7D2FE', fontSize: 12, fontWeight: '700' },
+  punchValue: { color: '#fff', fontSize: 22, fontWeight: '900', marginTop: 2 },
+  punchTime: { color: '#A5B4FC', fontSize: 12, marginTop: 4 },
+  punchBtn: { borderRadius: radius.pill, overflow: 'hidden' },
+  punchBtnGrad: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
+  punchBtnText: { color: '#fff', fontWeight: '800', marginLeft: 8 },
+  statsRow: {
+    flexDirection: 'row', marginTop: -50,
+    marginHorizontal: spacing.lg,
+    backgroundColor: '#fff',
+    borderRadius: radius.xl, padding: spacing.md,
+    shadowColor: '#0f172a', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 20, elevation: 6,
   },
-  tileIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  tileLabel: { fontSize: 12, fontWeight: '600', color: colors.text, textAlign: 'center' },
-  approvalBtn: {
-    marginTop: 14, backgroundColor: 'rgba(255,255,255,0.15)',
-    padding: 12, borderRadius: 12, alignItems: 'center',
+  statMini: { flex: 1, alignItems: 'center' },
+  statIcon: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+  statValue: { fontSize: 18, fontWeight: '900', color: colors.text },
+  statLabel: { fontSize: 10, color: colors.subtext, marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.5 },
+  banner: {
+    borderRadius: radius.xl, padding: spacing.lg,
+    flexDirection: 'row', alignItems: 'center',
+    shadowColor: '#4C1D95', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 4,
   },
+  bannerTitle: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  bannerText: { color: '#E0E7FF', fontSize: 12, marginTop: 2 },
+  bannerCta: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999 },
+  bannerCtaText: { color: colors.primary, fontWeight: '800', fontSize: 12, marginRight: 4 },
+  tilesWrap: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  link: { color: colors.primary, fontWeight: '700', fontSize: 12 },
+  eventIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
 });

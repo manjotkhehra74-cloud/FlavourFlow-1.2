@@ -1,9 +1,9 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import Svg, { Circle } from 'react-native-svg';
 import { Api } from '../api/client';
-import { Screen, Card, Badge, Button, Row, EmptyState } from '../components/UI';
+import { Screen, Card, Badge, Button, Row, EmptyState, NavHeader, Chip } from '../components/UI';
 import { colors, fmtDate } from '../theme';
 
 export default function AttendanceScreen({ navigation }) {
@@ -15,25 +15,30 @@ export default function AttendanceScreen({ navigation }) {
   const load = useCallback(async () => {
     try {
       const [h, m] = await Promise.all([Api.attendanceHistory(), Api.myAttendanceRequests()]);
-      setRecords(h.records);
-      setMine(m.requests);
+      setRecords(h.records || []);
+      setMine(m.requests || []);
     } catch (e) { Alert.alert('Error', e.message); }
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
+  const stats = useMemo(() => {
+    const acc = { present: 0, late: 0, absent: 0, wfh: 0, on_leave: 0 };
+    records.forEach((r) => { if (acc[r.status] !== undefined) acc[r.status] += 1; });
+    return acc;
+  }, [records]);
+
   return (
     <Screen>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
-        <Text style={styles.title}>My Attendance</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
+      <NavHeader title="My Attendance" navigation={navigation} />
       <View style={styles.tabs}>
-        <Tab label="History" active={tab === 'history'} onPress={() => setTab('history')} />
-        <Tab label="My requests" active={tab === 'requests'} onPress={() => setTab('requests')} badge={mine.filter(m => m.status === 'pending').length} />
+        <Chip label="History" active={tab === 'history'} onPress={() => setTab('history')} />
+        <Chip
+          label={`My requests${mine.filter((m) => m.status === 'pending').length ? ' · ' + mine.filter((m) => m.status === 'pending').length : ''}`}
+          active={tab === 'requests'}
+          onPress={() => setTab('requests')}
+        />
       </View>
 
       {tab === 'history' ? (
@@ -41,12 +46,25 @@ export default function AttendanceScreen({ navigation }) {
           data={records}
           keyExtractor={(r) => String(r.id)}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          ListHeaderComponent={
+            <Card style={{ marginHorizontal: 16, marginBottom: 8 }}>
+              <Row style={{ alignItems: 'center' }}>
+                <Donut present={stats.present} late={stats.late} absent={stats.absent} wfh={stats.wfh} />
+                <View style={{ flex: 1, marginLeft: 16 }}>
+                  <Legend color={colors.green} label="Present" value={stats.present} />
+                  <Legend color={colors.orange} label="Late" value={stats.late} />
+                  <Legend color={colors.blue} label="WFH" value={stats.wfh} />
+                  <Legend color={colors.red} label="Absent" value={stats.absent} />
+                </View>
+              </Row>
+            </Card>
+          }
           ListEmptyComponent={<EmptyState title="No records" subtitle="Mark your attendance to see it here." />}
           renderItem={({ item }) => (
             <Card>
               <Row style={{ justifyContent: 'space-between' }}>
                 <View>
-                  <Text style={{ fontWeight: '700' }}>{fmtDate(item.date)}</Text>
+                  <Text style={{ fontWeight: '700', color: colors.text }}>{fmtDate(item.date)}</Text>
                   <Text style={{ color: colors.subtext, marginTop: 4, fontSize: 12 }}>
                     {item.clock_in ? new Date(item.clock_in).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}
                     {'  →  '}
@@ -67,38 +85,76 @@ export default function AttendanceScreen({ navigation }) {
           renderItem={({ item }) => (
             <Card>
               <Row style={{ justifyContent: 'space-between' }}>
-                <Text style={{ fontWeight: '700' }}>{item.type.replace('_', ' ').toUpperCase()}</Text>
+                <Text style={{ fontWeight: '700', color: colors.text }}>{String(item.type || '').replace('_', ' ').toUpperCase()}</Text>
                 <Badge text={item.status} />
               </Row>
               <Text style={{ color: colors.subtext, marginTop: 6 }}>{fmtDate(item.date)}</Text>
-              <Text style={{ marginTop: 6 }}>{item.reason}</Text>
+              <Text style={{ marginTop: 6, color: colors.text }}>{item.reason}</Text>
             </Card>
           )}
         />
       )}
 
       <View style={{ padding: 16 }}>
-        <Button title="+ Request regularisation / mark attendance" onPress={() => navigation.navigate('NewAttendanceRequest', { onCreated: load })} />
+        <Button title="Request regularisation" icon="add" onPress={() => navigation.navigate('NewAttendance', { onCreated: load })} />
       </View>
     </Screen>
   );
 }
 
-function Tab({ label, active, onPress, badge }) {
+function Legend({ color, label, value }) {
   return (
-    <TouchableOpacity onPress={onPress} style={[styles.tab, active && styles.tabActive]}>
-      <Text style={[styles.tabText, active && { color: '#fff' }]}>{label}</Text>
-      {badge ? <View style={styles.badgeDot}><Text style={{ color: '#fff', fontSize: 11, fontWeight: '800' }}>{badge}</Text></View> : null}
-    </TouchableOpacity>
+    <Row style={{ marginBottom: 8 }}>
+      <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: color, marginRight: 8 }} />
+      <Text style={{ flex: 1, color: colors.subtext, fontSize: 13 }}>{label}</Text>
+      <Text style={{ fontWeight: '800', color: colors.text }}>{value}</Text>
+    </Row>
+  );
+}
+
+function Donut({ present, late, absent, wfh, size = 124 }) {
+  const total = Math.max(1, present + late + absent + wfh);
+  const stroke = 12;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const segs = [
+    { n: present, color: colors.green },
+    { n: late, color: colors.orange },
+    { n: wfh, color: colors.blue },
+    { n: absent, color: colors.red },
+  ];
+  let offset = 0;
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={size} height={size} style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}>
+        <Circle cx={size / 2} cy={size / 2} r={r} stroke={colors.border} strokeWidth={stroke} fill="none" />
+        {segs.map((s, i) => {
+          const len = (s.n / total) * c;
+          const dash = `${len} ${c - len}`;
+          const el = (
+            <Circle
+              key={i}
+              cx={size / 2}
+              cy={size / 2}
+              r={r}
+              stroke={s.color}
+              strokeWidth={stroke}
+              fill="none"
+              strokeDasharray={dash}
+              strokeDashoffset={-offset}
+              strokeLinecap="butt"
+            />
+          );
+          offset += len;
+          return el;
+        })}
+      </Svg>
+      <Text style={{ fontSize: 22, fontWeight: '900', color: colors.text }}>{present}</Text>
+      <Text style={{ fontSize: 11, color: colors.subtext }}>Present</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: colors.brand, gap: 14 },
-  title: { color: '#fff', fontSize: 18, fontWeight: '800', flex: 1 },
-  tabs: { flexDirection: 'row', backgroundColor: '#fff', padding: 6, margin: 12, borderRadius: 12, gap: 6 },
-  tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 10, borderRadius: 8, gap: 6 },
-  tabActive: { backgroundColor: colors.brand },
-  tabText: { fontWeight: '700', color: colors.subtext },
-  badgeDot: { backgroundColor: colors.red, borderRadius: 10, paddingHorizontal: 7, paddingVertical: 1 },
+  tabs: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, paddingTop: 12 },
 });

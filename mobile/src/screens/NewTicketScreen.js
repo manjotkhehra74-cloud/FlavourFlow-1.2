@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
-import { ScrollView, Alert, Text, View, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ScrollView, Alert, Text, StyleSheet } from 'react-native';
 import { Api } from '../api/client';
-import { Screen, Input, Button, Row } from '../components/UI';
-import { colors } from '../theme';
+import { Screen, Input, Button, Row, Card, NavHeader, Chip } from '../components/UI';
+import { colors, spacing } from '../theme';
 
 const CATS = [
-  { key: 'it', label: '💻 IT' },
-  { key: 'hr', label: '🧑‍💼 HR' },
-  { key: 'facilities', label: '🏢 Facilities' },
-  { key: 'other', label: '❓ Other' },
+  { key: 'it', label: 'IT' },
+  { key: 'hr', label: 'HR' },
+  { key: 'facilities', label: 'Facilities' },
+  { key: 'other', label: 'Other' },
 ];
 
 export default function NewTicketScreen({ navigation, route }) {
@@ -20,7 +19,7 @@ export default function NewTicketScreen({ navigation, route }) {
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
-    if (!subject.trim() || !description.trim()) return Alert.alert('Fill all fields');
+    if (!subject.trim() || !description.trim()) return Alert.alert('Fill all fields', 'Subject and description are required.');
     setLoading(true);
     try {
       await Api.createTicket({ subject, category, description, priority });
@@ -32,42 +31,41 @@ export default function NewTicketScreen({ navigation, route }) {
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
-        <Text style={styles.title}>New ticket</Text>
-      </View>
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
-        <Input label="Subject" value={subject} onChangeText={setSubject} placeholder="Short summary" />
-        <Text style={styles.label}>Category</Text>
-        <Row style={{ gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-          {CATS.map(c => (
-            <TouchableOpacity key={c.key} onPress={() => setCategory(c.key)}
-              style={[styles.chip, category === c.key && styles.chipActive]}>
-              <Text style={[category === c.key && { color: '#fff' }, { fontWeight: '700' }]}>{c.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </Row>
-        <Text style={styles.label}>Priority</Text>
-        <Row style={{ gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-          {['low', 'medium', 'high'].map(p => (
-            <TouchableOpacity key={p} onPress={() => setPriority(p)}
-              style={[styles.chip, priority === p && styles.chipActive]}>
-              <Text style={[priority === p && { color: '#fff' }, { fontWeight: '700', textTransform: 'capitalize' }]}>{p}</Text>
-            </TouchableOpacity>
-          ))}
-        </Row>
-        <Input label="Description" value={description} onChangeText={setDescription}
-          multiline style={{ minHeight: 120, textAlignVertical: 'top' }} placeholder="Describe the issue..." />
-        <Button title={loading ? 'Submitting...' : 'Raise ticket'} onPress={submit} disabled={loading} />
+      <NavHeader title="New ticket" navigation={navigation} mode="back" />
+      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        <Card>
+          <Text style={styles.lead}>Raise a request for IT, HR or facilities. We'll route it to the right team.</Text>
+          <Input label="Subject" icon="pricetag-outline" value={subject} onChangeText={setSubject} placeholder="Short summary" />
+          <Text style={styles.label}>Category</Text>
+          <Row style={styles.chips}>
+            {CATS.map((c) => (
+              <Chip key={c.key} label={c.label} active={category === c.key} onPress={() => setCategory(c.key)} />
+            ))}
+          </Row>
+          <Text style={styles.label}>Priority</Text>
+          <Row style={styles.chips}>
+            {['low', 'medium', 'high'].map((p) => (
+              <Chip key={p} label={p} active={priority === p} onPress={() => setPriority(p)} />
+            ))}
+          </Row>
+          <Input
+            label="Description"
+            icon="document-text-outline"
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            placeholder="Describe the issue..."
+          />
+          <Button title={loading ? 'Submitting...' : 'Raise ticket'} onPress={submit} disabled={loading} loading={loading} icon="ticket-outline" />
+        </Card>
       </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: colors.brand, gap: 14 },
-  title: { color: '#fff', fontSize: 18, fontWeight: '800' },
-  label: { fontSize: 13, fontWeight: '600', color: colors.subtext, marginBottom: 6 },
-  chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border },
-  chipActive: { backgroundColor: colors.brand, borderColor: colors.brand },
+  body: { padding: spacing.lg, paddingBottom: 40 },
+  lead: { color: colors.subtext, marginBottom: 16, lineHeight: 20 },
+  label: { fontSize: 12, fontWeight: '700', color: colors.subtext, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  chips: { flexWrap: 'wrap', marginBottom: 16 },
 });

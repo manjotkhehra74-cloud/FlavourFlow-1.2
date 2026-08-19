@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { Screen, Avatar, Card, Row, Badge, Button, Input } from '../components/UI';
+import { Screen, Avatar, Card, Row, Badge, Button, Input, NavHeader } from '../components/UI';
 import { colors, avatarColorFor, fmtDate } from '../theme';
 
 const ACTIONS = [
@@ -16,7 +16,7 @@ const ACTIONS = [
 ];
 
 export default function ProfileScreen({ navigation, route }) {
-  const { user: me } = useAuth();
+  const { user: me, logout } = useAuth();
   const id = route.params?.id || me.id;
   const [u, setU] = useState(null);
   const [modal, setModal] = useState(null); // action_type
@@ -46,13 +46,7 @@ export default function ProfileScreen({ navigation, route }) {
 
   return (
     <Screen>
-      <View style={styles.header}>
-        {navigation.canGoBack() ? (
-          <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
-        ) : <View style={{ width: 24 }} />}
-        <Text style={styles.headerTitle}>{u.name}</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <NavHeader title={u.name} navigation={navigation} mode="back" />
 
       <ScrollView>
         <View style={styles.heroCard}>
@@ -130,11 +124,9 @@ export default function ProfileScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: colors.brand, gap: 14 },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '800', flex: 1 },
-  heroCard: { alignItems: 'center', backgroundColor: colors.brand, paddingBottom: 28, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
+  heroCard: { alignItems: 'center', backgroundColor: colors.navy, paddingBottom: 28, borderBottomLeftRadius: 28, borderBottomRightRadius: 28, paddingTop: 8 },
   name: { color: '#fff', fontSize: 22, fontWeight: '900', marginTop: 10 },
-  role: { color: '#d1fae5', marginTop: 2 },
+  role: { color: '#C7D2FE', marginTop: 2 },
   section: { fontWeight: '800', fontSize: 15, marginBottom: 6 },
   actionRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
   actionIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },

@@ -38,7 +38,7 @@ export function HeroHeader({ title, subtitle, illustration }) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { backgroundColor: colors.brand },
+  wrap: { backgroundColor: colors.navy },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -46,9 +46,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   title: { color: '#fff', fontSize: 19, fontWeight: '800' },
-  subtitle: { color: '#d1fae5', fontSize: 12, marginTop: 2 },
+  subtitle: { color: '#C7D2FE', fontSize: 12, marginTop: 2 },
   hero: {
-    backgroundColor: colors.brand,
+    backgroundColor: colors.navy,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
     overflow: 'hidden',

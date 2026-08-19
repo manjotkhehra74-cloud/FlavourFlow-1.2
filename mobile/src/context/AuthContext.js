@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Api, setToken, getToken } from '../api/client';
 
 const AuthCtx = createContext(null);
+export const AuthContext = AuthCtx;
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);

@@ -29,7 +29,11 @@ router.get('/summary', (req, res) => {
   };
 
   if (isManager) {
-    const teamIds = new Set(db.users.filter(u => u.manager_id === uid).map(u => u.id));
+    const teamIds = new Set(
+      db.users
+        .filter(u => (req.user.role === 'admin' ? u.role !== 'admin' : u.manager_id === uid))
+        .map(u => u.id)
+    );
     result.pending.teamApprovals = db.attendance_requests.count(r => r.status === 'pending' && teamIds.has(r.user_id));
     result.teamCount = teamIds.size;
     result.teamPresentToday = db.attendance.count(a =>

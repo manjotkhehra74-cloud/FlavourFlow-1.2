@@ -48,7 +48,10 @@ export const Api = {
   events: () => api('/employees/events/today'),
   employee: (id) => api(`/employees/${id}`),
 
-  clock: (action, coords) => api('/attendance/clock', { method: 'POST', body: { action, ...coords, source: 'selfie' } }),
+  clock: (payload) => api('/attendance/clock', { method: 'POST', body: typeof payload === 'string' ? { action: payload } : payload }),
+  lateReasons: () => api('/meta/late-reasons', { auth: true }),
+  permissions: () => api('/meta/permissions', { auth: true }),
+  serverTime: () => api('/meta/time'),
   attendanceToday: () => api('/attendance/today'),
   attendanceHistory: (month) => api(`/attendance/history${month ? `?month=${month}` : ''}`),
   createAttendanceRequest: (date, type, reason) => api('/attendance/requests', { method: 'POST', body: { date, type, reason } }),
@@ -65,6 +68,12 @@ export const Api = {
   teamActions: () => api('/team/actions/pending'),
   createTeamAction: (user_id, action_type, payload) => api('/team/actions', { method: 'POST', body: { user_id, action_type, payload } }),
   reviewTeamAction: (id, action) => api(`/team/actions/${id}/review`, { method: 'POST', body: { action } }),
+
+  // Admin — user management
+  listUsers: () => api('/admin/users'),
+  createUser: (data) => api('/admin/users', { method: 'POST', body: data }),
+  updateUser: (id, data) => api(`/admin/users/${id}`, { method: 'PATCH', body: data }),
+  deleteUser: (id) => api(`/admin/users/${id}`, { method: 'DELETE' }),
 
   posts: () => api('/social/posts'),
   createPost: (post) => api('/social/posts', { method: 'POST', body: post }),
