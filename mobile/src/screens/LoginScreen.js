@@ -1,28 +1,27 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
-  TouchableOpacity, Alert
+  View, Text, StyleSheet, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView, Alert,
 } from 'react-native';
-import { useAuth } from '../context/AuthContext';
-import { Button, Input } from '../components/UI';
-import { colors } from '../theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { Api, setToken } from '../api/client';
+import { colors, radius, spacing } from '../theme';
+import { Input, Button, GradientView } from '../components/UI';
 
-const demoAccounts = [
-  { label: 'Manager — Akshay', email: 'akshay@pulsehr.app' },
-  { label: 'Employee — Deepak C.', email: 'deepak.c@pulsehr.app' },
-  { label: 'Employee — Anuj Jain', email: 'anuj@pulsehr.app' },
-];
-
-export default function LoginScreen() {
-  const { login } = useAuth();
-  const [email, setEmail] = useState('akshay@pulsehr.app');
-  const [password, setPassword] = useState('password');
+export default function LoginScreen({ navigation }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  const submit = async () => {
+  const onLogin = async () => {
+    if (!email || !password) return Alert.alert('Missing', 'Email te password pao.');
     setLoading(true);
     try {
-      await login(email.trim(), password);
+      const res = await Api.login(email.trim().toLowerCase(), password);
+      await setToken(res.token);
+      // App reloads via auth state; nothing more to do.
     } catch (e) {
       Alert.alert('Login failed', e.message);
     } finally {
@@ -31,50 +30,151 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.bg }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View style={styles.hero}>
-          <Text style={styles.brand}>🌿 Pulse HR</Text>
-          <Text style={styles.heroTitle}>Namaste! 👋</Text>
-          <Text style={styles.heroSubtitle}>Attendance, leaves & team — sab kuch ek jagah.</Text>
-        </View>
+    <View style={{ flex: 1, backgroundColor: colors.navy }}>
+      <LinearGradient
+        colors={['#1E1B4B', '#0F172A']}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        style={{ flex: 1 }}
+      >
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+            {/* Hero */}
+            <View style={styles.hero}>
+              <LinearGradient
+                colors={['#7C3AED', '#4F46E5']}
+                style={styles.logoWrap}
+              >
+                <PulseMark color="#fff" />
+              </LinearGradient>
+              <Text style={styles.brand}>Pulse HR</Text>
+              <Text style={styles.tagline}>People. Purpose. Performance.</Text>
+            </View>
 
-        <View style={styles.form}>
-          <Input label="Work email" value={email} onChangeText={setEmail}
-            autoCapitalize="none" keyboardType="email-address" />
-          <Input label="Password" value={password} onChangeText={setPassword} secureTextEntry />
-          <Button title={loading ? 'Signing in...' : 'Sign in'} onPress={submit} disabled={loading} />
+            {/* Form card */}
+            <View style={styles.card}>
+              <Text style={styles.welcome}>Welcome Back! 👋</Text>
+              <Text style={styles.subWelcome}>Login to continue</Text>
 
-          <Text style={styles.hint}>Demo accounts (password: <Text style={{ fontWeight: '700' }}>password</Text>):</Text>
-          {demoAccounts.map(a => (
-            <TouchableOpacity key={a.email} style={styles.chip}
-              onPress={() => setEmail(a.email)}>
-              <Text style={styles.chipText}>• {a.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+              <Input
+                label="Email or Mobile"
+                icon="mail-outline"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                placeholder="you@pulsehr.app"
+              />
+              <Input
+                label="Password"
+                icon="lock-closed-outline"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPw}
+                placeholder="Enter password"
+              />
+
+              <View style={styles.rememberRow}>
+                <TouchableOpacity style={styles.check} onPress={() => setRemember(v => !v)}>
+                  <Ionicons
+                    name={remember ? 'checkbox' : 'square-outline'}
+                    size={20} color={remember ? colors.primary : colors.subtext}
+                  />
+                  <Text style={styles.rememberText}>Remember me</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => Alert.alert('Reset password', 'Admin naal rabta karo.')}>
+                  <Text style={styles.forgot}>Forgot?</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Button
+                title="Login"
+                onPress={onLogin}
+                loading={loading}
+                style={{ marginTop: spacing.md }}
+              />
+
+              <Text style={styles.or}>or continue with</Text>
+
+              <View style={styles.socials}>
+                {[
+                  { n: 'logo-google', c: '#EA4335' },
+                  { n: 'logo-microsoft', c: '#0078D4' },
+                  { n: 'logo-apple', c: colors.text },
+                ].map((s, i) => (
+                  <TouchableOpacity key={i} style={styles.socialBtn}>
+                    <Ionicons name={s.n} size={20} color={s.c} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.footer}>Don't have an account? <Text style={{ color: colors.primary, fontWeight: '700' }}>Sign Up</Text></Text>
+
+              <TouchableOpacity
+                style={styles.demoFill}
+                onPress={() => { setEmail('admin@pulsehr.app'); setPassword('password'); }}
+              >
+                <Ionicons name="sparkles-outline" size={14} color={colors.primary} />
+                <Text style={styles.demoText}>  Use demo admin account</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </LinearGradient>
+    </View>
+  );
+}
+
+function PulseMark({ color = '#fff', size = 56 }) {
+  // simple pulse-bars glyph
+  const bars = [10, 18, 26, 34, 26, 18, 10];
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, height: size * 0.55 }}>
+      {bars.map((h, i) => (
+        <View key={i} style={{ width: 6, height: h / 34 * (size * 0.55), backgroundColor: color, borderRadius: 3 }} />
+      ))}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: {
-    backgroundColor: colors.brand,
-    paddingTop: 80,
-    paddingBottom: 40,
-    paddingHorizontal: 24,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+  hero: { alignItems: 'center', paddingTop: 80, paddingBottom: 28 },
+  logoWrap: {
+    width: 88, height: 88, borderRadius: 24,
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#7C3AED', shadowOpacity: 0.4, shadowRadius: 18, shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
   },
-  brand: { color: '#a7f3d0', fontWeight: '700', marginBottom: 24 },
-  heroTitle: { color: '#fff', fontSize: 30, fontWeight: '900' },
-  heroSubtitle: { color: '#d1fae5', marginTop: 8, fontSize: 15 },
-  form: { padding: 24, marginTop: 8 },
-  hint: { marginTop: 22, fontSize: 12, color: colors.subtext, marginBottom: 6 },
-  chip: { paddingVertical: 6 },
-  chipText: { color: colors.brand, fontWeight: '600' },
+  brand: { color: '#fff', fontSize: 28, fontWeight: '900', marginTop: 14, letterSpacing: 0.5 },
+  tagline: { color: '#A5B4FC', fontSize: 13, marginTop: 4 },
+  card: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
+    paddingTop: 28,
+  },
+  welcome: { fontSize: 22, fontWeight: '900', color: colors.text },
+  subWelcome: { color: colors.subtext, marginTop: 4, marginBottom: 20 },
+  rememberRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+  check: { flexDirection: 'row', alignItems: 'center' },
+  rememberText: { marginLeft: 6, color: colors.textLight, fontSize: 13 },
+  forgot: { color: colors.primary, fontSize: 13, fontWeight: '700' },
+  or: { textAlign: 'center', color: colors.subtext, fontSize: 12, marginVertical: 18, textTransform: 'uppercase' },
+  socials: { flexDirection: 'row', justifyContent: 'center', gap: 14 },
+  socialBtn: {
+    width: 52, height: 52, borderRadius: 14,
+    borderWidth: 1, borderColor: colors.border,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
+  footer: { textAlign: 'center', color: colors.subtext, fontSize: 13, marginTop: 18 },
+  demoFill: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    marginTop: 14, padding: 10, backgroundColor: colors.primarySoft, borderRadius: 12,
+  },
+  demoText: { color: colors.primary, fontWeight: '700', fontSize: 12 },
 });
