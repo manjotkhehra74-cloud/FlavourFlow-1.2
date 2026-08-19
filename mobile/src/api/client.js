@@ -69,6 +69,12 @@ export const Api = {
   createTeamAction: (user_id, action_type, payload) => api('/team/actions', { method: 'POST', body: { user_id, action_type, payload } }),
   reviewTeamAction: (id, action) => api(`/team/actions/${id}/review`, { method: 'POST', body: { action } }),
 
+  // Admin — user management
+  listUsers: () => api('/admin/users'),
+  createUser: (data) => api('/admin/users', { method: 'POST', body: data }),
+  updateUser: (id, data) => api(`/admin/users/${id}`, { method: 'PATCH', body: data }),
+  deleteUser: (id) => api(`/admin/users/${id}`, { method: 'DELETE' }),
+
   posts: () => api('/social/posts'),
   createPost: (post) => api('/social/posts', { method: 'POST', body: post }),
   likePost: (id) => api(`/social/posts/${id}/like`, { method: 'POST' }),

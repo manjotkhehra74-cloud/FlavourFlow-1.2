@@ -21,6 +21,7 @@ import HelpdeskScreen from '../screens/HelpdeskScreen';
 import NewTicketScreen from '../screens/NewTicketScreen';
 import ApprovalsScreen from '../screens/ApprovalsScreen';
 import PermissionsScreen from '../screens/PermissionsScreen';
+import AdminUsersScreen from '../screens/AdminUsersScreen';
 import { ActivityIndicator, View } from 'react-native';
 
 const Stack = createNativeStackNavigator();
@@ -76,6 +77,7 @@ function AppTabs() {
       <Stack.Screen name="NewTicket" component={NewTicketScreen} />
       <Stack.Screen name="Approvals" component={ApprovalsScreen} />
       <Stack.Screen name="Permissions" component={PermissionsScreen} />
+      <Stack.Screen name="AdminUsers" component={AdminUsersScreen} options={{ title: 'Manage employees' }} />
     </Stack.Navigator>
   );
 }

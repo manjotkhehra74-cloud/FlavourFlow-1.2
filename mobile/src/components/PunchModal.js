@@ -47,6 +47,7 @@ export default function PunchModal({ visible, onClose, onPunched, today }) {
 
   const startPunch = async () => {
     if (alreadyIn) return submitPunch(); // clock out
+    if (step === 'submitting' || step === 'confirming') return;
     setStep('confirming');
     try {
       const loc = await getCurrentLocation();
@@ -72,7 +73,7 @@ export default function PunchModal({ visible, onClose, onPunched, today }) {
       }
       await submitPunch(loc);
     } catch (e) {
-      Alert.alert('Location error', e.message + '\n\nLocation on kar ke pher try karo.');
+      Alert.alert('Location / permission error', e.message + '\n\nLocation on kar ke pher try karo.');
       setStep('idle');
     }
   };

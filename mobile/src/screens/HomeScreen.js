@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { Screen, Card, Button, Row, StatPill, Badge } from '../components/UI';
 import { colors, fmtTime } from '../theme';
 import PunchModal from '../components/PunchModal';
-import { scheduleDailyReminder, ensureNotificationPermission, openLocationSettings } from '../utils/permissions';
+import { scheduleDailyReminder, ensureNotificationPermission, openLocationSettings, getBiometricSupport } from '../utils/permissions';
 
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
@@ -34,6 +34,29 @@ export default function HomeScreen({ navigation }) {
     (async () => {
       await ensureNotificationPermission();
       await scheduleDailyReminder(10, 0);
+    })();
+  }, []);
+
+  // App opens -> immediately prompt for needed permissions (location/camera are
+  // asked by Expo when we first use them; notifications and biometrics here).
+  useEffect(() => {
+    (async () => {
+      try {
+        const notif = await ensureNotificationPermission();
+        const hasBio = await getBiometricSupport();
+        if (!notif || !hasBio) {
+          // gentle nudge; user can revisit via Permissions screen
+          setTimeout(() => {
+            Alert.alert(
+              'Permissions',
+              'Pulse HR notifications, location, camera aur biometrics use kardi hai. Permissions screen vich manage kar sakde ho.',
+              [
+                { text: 'Theek hai', style: 'cancel' },
+              ]
+            );
+          }, 800);
+        }
+      } catch {}
     })();
   }, []);
 
@@ -103,6 +126,9 @@ export default function HomeScreen({ navigation }) {
           <QuickTile icon="headset-outline" label="Helpdesk" color={colors.blue} onPress={() => navigation.navigate('Helpdesk')} />
           <QuickTile icon="document-text-outline" label="Profile" color={colors.brand} onPress={() => navigation.navigate('Profile', { id: user.id })} />
           <QuickTile icon="shield-checkmark-outline" label="Permissions" color={colors.purple} onPress={() => navigation.navigate('Permissions')} />
+          {user?.role === 'admin' && (
+            <QuickTile icon="people-circle-outline" label="Employees" color={colors.brand} onPress={() => navigation.navigate('AdminUsers')} />
+          )}
         </View>
 
         {isManager ? (

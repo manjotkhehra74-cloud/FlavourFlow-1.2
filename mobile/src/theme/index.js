@@ -1,34 +1,38 @@
+// Pulse HR — final "Pulse Wave" brand palette
 export const colors = {
-  brand: '#065f46',
-  brandDark: '#064e3b',
-  brandLight: '#10b981',
-  teal: '#0d9488',
-  bg: '#f5f7f7',
-  card: '#ffffff',
-  text: '#0f172a',
-  subtext: '#64748b',
-  border: '#e2e8f0',
-  green: '#16a34a',
-  red: '#dc2626',
-  orange: '#f59e0b',
-  purple: '#7c3aed',
-  blue: '#2563eb',
-  pink: '#db2777',
+  // primary purple gradient (logo #7C3AED -> #4338CA)
+  brand: '#6D28D9',        // deep violet (buttons, headers)
+  brandDark: '#4C1D95',    // darker
+  brandLight: '#8B5CF6',   // lighter
+  brandSoft: '#EDE9FE',    // tinted background
+  accent: '#A78BFA',       // highlight
+  teal: '#0EA5E9',
+  bg: '#F7F7FB',
+  card: '#FFFFFF',
+  text: '#0F172A',
+  subtext: '#64748B',
+  border: '#E2E8F0',
+  green: '#16A34A',
+  red: '#DC2626',
+  orange: '#F59E0B',
+  purple: '#7C3AED',
+  blue: '#2563EB',
+  pink: '#DB2777',
 };
 
 export const statusColors = {
-  present: '#16a34a',
-  late: '#f59e0b',
-  absent: '#dc2626',
-  wfh: '#2563eb',
-  on_leave: '#7c3aed',
-  pending: '#f59e0b',
-  approved: '#16a34a',
-  rejected: '#dc2626',
-  open: '#f59e0b',
-  in_progress: '#2563eb',
-  resolved: '#16a34a',
-  closed: '#64748b',
+  present: '#16A34A',
+  late: '#F59E0B',
+  absent: '#DC2626',
+  wfh: '#2563EB',
+  on_leave: '#7C3AED',
+  pending: '#F59E0B',
+  approved: '#16A34A',
+  rejected: '#DC2626',
+  open: '#F59E0B',
+  in_progress: '#2563EB',
+  resolved: '#16A34A',
+  closed: '#64748B',
 };
 
 export const fmtINR = (n) => Number(n).toLocaleString('en-IN');
@@ -37,7 +41,7 @@ export const fmtTime = (s) => s ? new Date(s).toLocaleTimeString('en-IN', { hour
 export const initials = (name = '') => name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
 export const avatarColorFor = (name = '') => {
-  const palette = ['#0d9488', '#7c3aed', '#dc2626', '#2563eb', '#f59e0b', '#db2777', '#0891b2', '#059669'];
+  const palette = ['#7C3AED', '#2563EB', '#DB2777', '#0891B2', '#F59E0B', '#16A34A', '#9333EA', '#0EA5E9'];
   let h = 0;
   for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
   return palette[Math.abs(h) % palette.length];
