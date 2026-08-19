@@ -1,0 +1,28 @@
+{
+  "apps": [
+    {
+      "name": "pulsehr-api",
+      "cwd": "/var/www/pulsehr/server",
+      "script": "src/index.js",
+      "instances": 1,
+      "exec_mode": "fork",
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": 4100,
+        "DATA_DIR": "/var/www/pulsehr/data",
+        "JWT_SECRET": "CHANGE_ME_to_a_long_random_string_openssl_rand_hex_32"
+      }
+    },
+    {
+      "name": "flavorflow-erp",
+      "cwd": "/var/www/flavorflow",
+      "script": "server.js",
+      "instances": 1,
+      "exec_mode": "fork",
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": 3000
+      }
+    }
+  ]
+}
