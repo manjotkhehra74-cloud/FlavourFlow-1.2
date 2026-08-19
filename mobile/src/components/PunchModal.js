@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Modal, View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, TextInput, Platform,
+  Modal, View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Api } from '../api/client';
-import { colors } from '../theme';
-import { Button } from './UI';
+import { colors, gradients, radius, spacing } from '../theme';
+import { Button, Input } from './UI';
 import {
   getCurrentLocation, authenticateBiometric, getBiometricSupport,
   openLocationSettings, vibrate,
@@ -46,7 +47,7 @@ export default function PunchModal({ visible, onClose, onPunched, today }) {
   const isManualLate = clockTime.getHours() >= 10;
 
   const startPunch = async () => {
-    if (alreadyIn) return submitPunch(); // clock out
+    if (alreadyIn) return submitPunch();
     if (step === 'submitting' || step === 'confirming') return;
     setStep('confirming');
     try {
@@ -58,7 +59,7 @@ export default function PunchModal({ visible, onClose, onPunched, today }) {
         return;
       }
       if (showLateFlow && !reasonId) {
-        Alert.alert('Reason chahida', 'Late attendance lai reason select karo.');
+        Alert.alert('Reason required', 'Please select a reason for late attendance.');
         setStep('idle');
         return;
       }
@@ -66,14 +67,14 @@ export default function PunchModal({ visible, onClose, onPunched, today }) {
       if (useBiometric && biometricLabel) {
         biometricOk = await authenticateBiometric('Punch attendance with ' + biometricLabel);
         if (!biometricOk) {
-          Alert.alert('Biometric fail', 'Fingerprint/face match nahi hoya. Dobara koshish karo.');
+          Alert.alert('Biometric failed', 'Fingerprint / face did not match. Please try again.');
           setStep('idle');
           return;
         }
       }
       await submitPunch(loc);
     } catch (e) {
-      Alert.alert('Location / permission error', e.message + '\n\nLocation on kar ke pher try karo.');
+      Alert.alert('Location / permission error', (e && e.message) + '\n\nTurn on location and try again.');
       setStep('idle');
     }
   };
@@ -114,66 +115,75 @@ export default function PunchModal({ visible, onClose, onPunched, today }) {
     onClose();
   };
 
-  const selectedReason = useMemo(() => reasons.find(r => r.id === reasonId), [reasons, reasonId]);
+  const selectedReason = useMemo(() => reasons.find((r) => r.id === reasonId), [reasons, reasonId]);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={resetAndClose}>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
-          <View style={styles.handle} />
-          <View style={styles.header}>
-            <Text style={styles.title}>{alreadyIn ? 'Clock out' : 'Mark attendance'}</Text>
-            <TouchableOpacity onPress={resetAndClose}><Ionicons name="close" size={22} color={colors.subtext} /></TouchableOpacity>
-          </View>
+          <LinearGradient colors={gradients.brand} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+            <View style={styles.handle} />
+            <View style={styles.header}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.kicker}>{alreadyIn ? 'Wrap up your day' : 'Pulse check-in'}</Text>
+                <Text style={styles.title}>{alreadyIn ? 'Clock out' : 'Mark attendance'}</Text>
+              </View>
+              <TouchableOpacity onPress={resetAndClose} style={styles.closeBtn}>
+                <Ionicons name="close" size={20} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </LinearGradient>
 
-          <ScrollView>
+          <ScrollView contentContainerStyle={{ paddingBottom: 8 }} keyboardShouldPersistTaps="handled">
             {alreadyIn ? (
-              <Text style={styles.info}>Tu clock-in ho chuka hai. Clock out karn lai thalle button dabao.</Text>
+              <Text style={styles.info}>You are already clocked in. Tap the button below to clock out.</Text>
             ) : !showLateFlow ? (
               <>
                 <View style={styles.clockRow}>
-                  <Ionicons name="time-outline" size={22} color={isLate ? colors.red : colors.brand} />
+                  <View style={[styles.clockIcon, { backgroundColor: (isLate ? colors.red : colors.primary) + '18' }]}>
+                    <Ionicons name="time-outline" size={22} color={isLate ? colors.red : colors.primary} />
+                  </View>
                   <Text style={[styles.clockText, { color: isLate ? colors.red : colors.text }]}>
                     {now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                   </Text>
-                  {isLate && <Text style={styles.latePill}>LATE</Text>}
+                  {isLate ? <Text style={styles.latePill}>LATE</Text> : null}
                 </View>
 
-                {biometricLabel && (
+                {biometricLabel ? (
                   <TouchableOpacity
                     style={[styles.option, useBiometric && styles.optionOn]}
-                    onPress={() => setUseBiometric(v => !v)}
+                    onPress={() => setUseBiometric((v) => !v)}
                   >
-                    <Ionicons name={useBiometric ? 'checkbox' : 'square-outline'} size={22} color={colors.brand} />
+                    <Ionicons name={useBiometric ? 'checkbox' : 'square-outline'} size={22} color={colors.primary} />
                     <View style={{ flex: 1, marginLeft: 10 }}>
                       <Text style={styles.optionTitle}>Use {biometricLabel}</Text>
-                      <Text style={styles.optionSub}>Punch karan to pehlaan fingerprint/face verify hovega</Text>
+                      <Text style={styles.optionSub}>Verify fingerprint / face before punching</Text>
                     </View>
                   </TouchableOpacity>
-                )}
+                ) : null}
 
                 <TouchableOpacity style={styles.option} onPress={openLocationSettings}>
                   <Ionicons name="location-outline" size={22} color={colors.blue} />
                   <View style={{ flex: 1, marginLeft: 10 }}>
-                    <Text style={styles.optionTitle}>Location open karo</Text>
-                    <Text style={styles.optionSub}>GPS on karo te exact location capture hove</Text>
+                    <Text style={styles.optionTitle}>Location settings</Text>
+                    <Text style={styles.optionSub}>GPS must be on so we can geo-tag this punch</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
                 </TouchableOpacity>
 
-                {isLate && (
+                {isLate ? (
                   <View style={styles.warnBox}>
                     <Ionicons name="alert-circle" size={20} color={colors.red} />
                     <Text style={styles.warnText}>
-                      10 AM to baad attendance late lagdi hai. Reason puchhe jayega.
+                      After 10 AM this punch is marked late. You will be asked for a reason.
                     </Text>
                   </View>
-                )}
+                ) : null}
               </>
             ) : (
               <>
                 <Text style={styles.section}>Late attendance reason</Text>
-                {reasons.map(r => (
+                {reasons.map((r) => (
                   <TouchableOpacity
                     key={r.id}
                     style={[styles.reasonRow, reasonId === r.id && styles.reasonRowOn]}
@@ -182,44 +192,57 @@ export default function PunchModal({ visible, onClose, onPunched, today }) {
                     <Ionicons
                       name={reasonId === r.id ? 'radio-button-on' : 'radio-button-off'}
                       size={20}
-                      color={colors.brand}
+                      color={colors.primary}
                     />
                     <Text style={styles.reasonLabel}>{r.label}</Text>
                   </TouchableOpacity>
                 ))}
 
-                <Text style={[styles.section, { marginTop: 16 }]}>Check-in time (manual)</Text>
+                <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
+                  <Input
+                    label="Note (optional)"
+                    value={note}
+                    onChangeText={setNote}
+                    multiline
+                    placeholder="Anything else we should know?"
+                  />
+                </View>
+
+                <Text style={[styles.section, { marginTop: 4 }]}>Check-in time (manual)</Text>
                 <TouchableOpacity style={styles.timeRow} onPress={() => DateTimePicker && setShowPicker(true)}>
-                  <Ionicons name="calendar-outline" size={20} color={colors.brand} />
+                  <Ionicons name="calendar-outline" size={20} color={colors.primary} />
                   <Text style={styles.timeText}>
                     {clockTime.toLocaleString('en-IN', {
                       day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
                     })}
                   </Text>
                 </TouchableOpacity>
-                {!DateTimePicker && (
+                {!DateTimePicker ? (
                   <Text style={styles.warnInline}>
                     Native picker is not in this build. Rebuild from Codemagic to enable it.
                   </Text>
-                )}
-                {showPicker && DateTimePicker && (
+                ) : null}
+                {showPicker && DateTimePicker ? (
                   <DateTimePicker
                     value={clockTime}
                     mode="datetime"
                     is24Hour={false}
-                    display="default"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                     onChange={(e, d) => { setShowPicker(false); if (d) setManualTime(d); }}
                   />
-                )}
-                {isManualLate && <Text style={styles.warnInline}>Is time naal attendance LATE mark hovegi.</Text>}
+                ) : null}
+                {isManualLate ? <Text style={styles.warnInline}>This time will still be marked LATE.</Text> : null}
+                {selectedReason ? (
+                  <Text style={styles.selectedHint}>Selected: {selectedReason.label}</Text>
+                ) : null}
               </>
             )}
           </ScrollView>
 
           <View style={styles.footer}>
-            {showLateFlow && (
-              <Button title="« Back" variant="outline" style={{ marginBottom: 8 }} onPress={() => setShowLateFlow(false)} />
-            )}
+            {showLateFlow ? (
+              <Button title="Back" variant="outline" style={{ marginBottom: 10 }} onPress={() => setShowLateFlow(false)} />
+            ) : null}
             <Button
               title={
                 step === 'submitting' ? 'Punching...'
@@ -230,6 +253,8 @@ export default function PunchModal({ visible, onClose, onPunched, today }) {
               }
               onPress={startPunch}
               disabled={step !== 'idle'}
+              loading={step !== 'idle'}
+              icon={alreadyIn ? 'log-out-outline' : 'finger-print-outline'}
             />
           </View>
         </View>
@@ -239,27 +264,57 @@ export default function PunchModal({ visible, onClose, onPunched, today }) {
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '85%', paddingBottom: 24 },
-  handle: { width: 44, height: 5, backgroundColor: '#cbd5e1', borderRadius: 3, alignSelf: 'center', marginTop: 10 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 18 },
-  title: { fontSize: 18, fontWeight: '800' },
-  info: { paddingHorizontal: 20, color: colors.subtext },
-  clockRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 18, marginHorizontal: 16, backgroundColor: colors.bg, borderRadius: 14 },
-  clockText: { fontSize: 28, fontWeight: '900' },
-  latePill: { backgroundColor: colors.red + '22', color: colors.red, fontWeight: '800', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, overflow: 'hidden', fontSize: 12, marginLeft: 'auto' },
-  option: { flexDirection: 'row', alignItems: 'center', padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: 14, marginHorizontal: 16, marginTop: 10 },
-  optionOn: { borderColor: colors.brand, backgroundColor: colors.brand + '10' },
-  optionTitle: { fontWeight: '700' },
+  backdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.55)', justifyContent: 'flex-end' },
+  sheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    maxHeight: '90%',
+    overflow: 'hidden',
+  },
+  hero: { paddingBottom: 16 },
+  handle: { width: 44, height: 5, backgroundColor: 'rgba(255,255,255,0.45)', borderRadius: 3, alignSelf: 'center', marginTop: 10 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12 },
+  kicker: { color: '#DDD6FE', fontSize: 12, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase' },
+  title: { color: '#fff', fontSize: 22, fontWeight: '900', marginTop: 2 },
+  closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
+  info: { paddingHorizontal: 20, paddingTop: 18, color: colors.subtext, lineHeight: 20 },
+  clockRow: {
+    flexDirection: 'row', alignItems: 'center',
+    padding: 16, marginHorizontal: 16, marginTop: 16,
+    backgroundColor: colors.bg, borderRadius: radius.lg,
+  },
+  clockIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  clockText: { fontSize: 28, fontWeight: '900', flex: 1 },
+  latePill: {
+    backgroundColor: colors.red + '22', color: colors.red, fontWeight: '800',
+    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, overflow: 'hidden', fontSize: 12,
+  },
+  option: {
+    flexDirection: 'row', alignItems: 'center', padding: 14,
+    borderWidth: 1, borderColor: colors.border, borderRadius: 14,
+    marginHorizontal: 16, marginTop: 10, backgroundColor: '#fff',
+  },
+  optionOn: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  optionTitle: { fontWeight: '700', color: colors.text },
   optionSub: { color: colors.subtext, fontSize: 12, marginTop: 2 },
-  warnBox: { flexDirection: 'row', gap: 10, padding: 12, backgroundColor: colors.red + '10', borderRadius: 12, margin: 16 },
-  warnText: { color: colors.red, flex: 1, flexShrink: 1 },
-  section: { fontWeight: '800', marginTop: 12, marginBottom: 6, paddingHorizontal: 18 },
-  reasonRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 10, marginHorizontal: 16, marginVertical: 4 },
-  reasonRowOn: { borderColor: colors.brand, backgroundColor: colors.brand + '0d' },
-  reasonLabel: { flex: 1, fontWeight: '600' },
-  timeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: 12, marginHorizontal: 16 },
-  timeText: { fontWeight: '700', fontSize: 16 },
+  warnBox: { flexDirection: 'row', padding: 12, backgroundColor: colors.redSoft, borderRadius: 12, margin: 16 },
+  warnText: { color: colors.red, flex: 1, flexShrink: 1, marginLeft: 10, lineHeight: 18 },
+  section: { fontWeight: '800', marginTop: 16, marginBottom: 6, paddingHorizontal: 18, color: colors.text },
+  reasonRow: {
+    flexDirection: 'row', alignItems: 'center',
+    padding: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 12,
+    marginHorizontal: 16, marginVertical: 4, backgroundColor: '#fff',
+  },
+  reasonRowOn: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  reasonLabel: { flex: 1, fontWeight: '600', marginLeft: 10, color: colors.text },
+  timeRow: {
+    flexDirection: 'row', alignItems: 'center',
+    padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: 12,
+    marginHorizontal: 16, backgroundColor: colors.bg,
+  },
+  timeText: { fontWeight: '700', fontSize: 16, marginLeft: 10, color: colors.text },
   warnInline: { color: colors.red, fontSize: 12, marginHorizontal: 18, marginTop: 8 },
-  footer: { padding: 16, borderTopWidth: 1, borderTopColor: colors.border },
+  selectedHint: { color: colors.primary, fontSize: 12, fontWeight: '700', marginHorizontal: 18, marginTop: 8 },
+  footer: { padding: 16, borderTopWidth: 1, borderTopColor: colors.border, paddingBottom: spacing.xl },
 });

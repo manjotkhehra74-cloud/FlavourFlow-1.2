@@ -1,48 +1,64 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity,
-  Dimensions, Alert,
+  View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Alert,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, DrawerActions } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { usePunch } from '../context/PunchContext';
 import {
-  Screen, Card, Button, Row, StatPill, Badge, QuickTile, SectionTitle, GradientView,
+  Screen, Card, Row, QuickTile, SectionTitle,
 } from '../components/UI';
 import { colors, radius, spacing, gradients, greeting, fmtTime } from '../theme';
-import PunchModal from '../components/PunchModal';
-import { scheduleDailyReminder, ensureNotificationPermission, openLocationSettings, getBiometricSupport } from '../utils/permissions';
-
-const W = Dimensions.get('window').width;
+import { scheduleDailyReminder, ensureNotificationPermission } from '../utils/permissions';
 
 export default function HomeScreen({ navigation }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const punch = usePunch();
   const [summary, setSummary] = useState(null);
   const [today, setToday] = useState(null);
   const [events, setEvents] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [punchVisible, setPunchVisible] = useState(false);
   const isPrivileged = user?.role !== 'employee';
 
   const load = useCallback(async () => {
     try {
       const [s, t] = await Promise.all([Api.summary(), Api.attendanceToday()]);
-      setSummary(s); setToday(t.today);
-      try { setEvents((await Api.events()).events || []); } catch {}
+      setSummary(s);
+      setToday(t.today);
+      if (punch.setToday) punch.setToday(t.today);
+      try {
+        const ev = await Api.events();
+        const list = (ev.today || []).map((e) => ({
+          type: e.event === 'birthday' ? 'birthday' : 'anniversary',
+          title: e.event === 'birthday' ? `${e.name}'s birthday` : `${e.name}'s work anniversary`,
+          subtitle: e.years ? `${e.years} years` : (e.designation || ''),
+        }));
+        setEvents(list);
+      } catch {}
     } catch (e) { Alert.alert('Error', e.message); }
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   useEffect(() => {
+    const unsub = punch.subscribe?.(load);
+    return () => { if (typeof unsub === 'function') unsub(); };
+  }, [punch, load]);
+
+  useEffect(() => {
     (async () => { await ensureNotificationPermission(); await scheduleDailyReminder(10, 0); })();
   }, []);
 
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
-  const initial = (user?.name || '').split(' ').map(w => w[0]).slice(0, 2).join('');
+  const initial = (user?.name || '').split(' ').map((w) => w[0]).slice(0, 2).join('');
   const hasPunched = !!today?.clock_in;
+  const month = summary?.monthStats || {};
+  const pendingCount = isPrivileged
+    ? (summary?.pending?.teamApprovals || 0) + (summary?.pendingLeaves || 0)
+    : (summary?.pending?.attendanceRequests || 0) + (summary?.pending?.leaves || 0);
 
   return (
     <Screen>
@@ -50,14 +66,19 @@ export default function HomeScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />}
       >
-        {/* Header with gradient */}
         <LinearGradient
           colors={['#1E1B4B', '#4C1D95']}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={styles.header}
         >
           <View style={styles.headerTop}>
-            <View style={{ flex: 1 }}>
+            <TouchableOpacity
+              style={styles.menuBtn}
+              onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+            >
+              <Ionicons name="menu" size={20} color="#fff" />
+            </TouchableOpacity>
+            <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={styles.greeting}>{greeting()}{user?.name ? ', ' + user.name.split(' ')[0] : ''} 👋</Text>
               <Text style={styles.role}>{user?.designation || user?.role || 'Member'}</Text>
             </View>
@@ -68,9 +89,8 @@ export default function HomeScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          {/* Punch card */}
           <View style={styles.punchCard}>
-            <View>
+            <View style={{ flex: 1, paddingRight: 10 }}>
               <Text style={styles.punchLabel}>Today's attendance</Text>
               <Text style={styles.punchValue}>{hasPunched ? 'Punched in' : 'Not marked yet'}</Text>
               {hasPunched ? (
@@ -80,7 +100,7 @@ export default function HomeScreen({ navigation }) {
               )}
             </View>
             <TouchableOpacity
-              onPress={() => setPunchVisible(true)}
+              onPress={() => punch.openPunch({ today })}
               style={styles.punchBtn}
               activeOpacity={0.85}
             >
@@ -92,16 +112,14 @@ export default function HomeScreen({ navigation }) {
           </View>
         </LinearGradient>
 
-        {/* Stats row */}
         <View style={styles.statsRow}>
-          <StatMini label="Present" value={summary?.month?.present ?? 0} color={colors.green} icon="checkmark-circle" />
-          <StatMini label="Late" value={summary?.month?.late ?? 0} color={colors.orange} icon="time" />
-          <StatMini label="WFH" value={summary?.month?.wfh ?? 0} color={colors.blue} icon="home" />
-          <StatMini label="Leaves" value={summary?.month?.on_leave ?? 0} color={colors.primary} icon="calendar" />
+          <StatMini label="Present" value={month.present ?? 0} color={colors.green} icon="checkmark-circle" />
+          <StatMini label="Late" value={month.late ?? 0} color={colors.orange} icon="time" />
+          <StatMini label="WFH" value={month.wfh ?? 0} color={colors.blue} icon="home" />
+          <StatMini label="Leaves" value={month.on_leave ?? 0} color={colors.primary} icon="calendar" />
         </View>
 
-        {/* Stay-on-track banner for managers */}
-        {isPrivileged && (
+        {isPrivileged ? (
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={() => navigation.navigate('Approvals')}
@@ -110,9 +128,7 @@ export default function HomeScreen({ navigation }) {
             <LinearGradient colors={gradients.brand} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.banner}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.bannerTitle}>Stay on track! 📋</Text>
-                <Text style={styles.bannerText}>
-                  {(summary?.pending_attendance ?? 0) + (summary?.pending_leaves ?? 0)} approvals pending
-                </Text>
+                <Text style={styles.bannerText}>{pendingCount} approvals pending</Text>
               </View>
               <View style={styles.bannerCta}>
                 <Text style={styles.bannerCtaText}>Review</Text>
@@ -120,9 +136,8 @@ export default function HomeScreen({ navigation }) {
               </View>
             </LinearGradient>
           </TouchableOpacity>
-        )}
+        ) : null}
 
-        {/* Quick access */}
         <View style={{ padding: spacing.lg, paddingTop: 0 }}>
           <SectionTitle>Quick Access</SectionTitle>
           <View style={styles.tilesWrap}>
@@ -138,16 +153,15 @@ export default function HomeScreen({ navigation }) {
               onPress={() => navigation.navigate('Helpdesk')} />
             <QuickTile icon="document-text-outline" label="Profile" color={colors.primary}
               onPress={() => navigation.navigate('Profile', { id: user.id })} />
-            {user?.role === 'admin' && (
+            {user?.role === 'admin' ? (
               <QuickTile icon="people-circle" label="Employees" color={colors.navy}
                 onPress={() => navigation.navigate('AdminUsers')} />
-            )}
+            ) : null}
             <QuickTile icon="shield-checkmark" label="Permissions" color={colors.primary}
               onPress={() => navigation.navigate('Permissions')} />
           </View>
 
-          {/* Today's events / birthdays */}
-          {events.length > 0 && (
+          {events.length > 0 ? (
             <>
               <SectionTitle right={<TouchableOpacity onPress={() => navigation.navigate('Social')}><Text style={styles.link}>View all</Text></TouchableOpacity>}>
                 Today
@@ -167,16 +181,9 @@ export default function HomeScreen({ navigation }) {
                 ))}
               </Card>
             </>
-          )}
+          ) : null}
         </View>
       </ScrollView>
-
-      <PunchModal
-        visible={punchVisible}
-        today={today}
-        onClose={() => setPunchVisible(false)}
-        onPunched={() => { setPunchVisible(false); load(); }}
-      />
     </Screen>
   );
 }
@@ -195,15 +202,16 @@ function StatMini({ label, value, color, icon }) {
 
 const styles = StyleSheet.create({
   header: {
-    paddingTop: 60,
+    paddingTop: 52,
     paddingHorizontal: spacing.lg,
     paddingBottom: 80,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
   },
   headerTop: { flexDirection: 'row', alignItems: 'center' },
+  menuBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
   greeting: { color: '#E0E7FF', fontSize: 14 },
-  role: { color: '#A5B4FC', fontSize: 18, fontWeight: '800', marginTop: 2 },
+  role: { color: '#fff', fontSize: 18, fontWeight: '800', marginTop: 2 },
   avatar: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: '#fff', fontWeight: '800', fontSize: 16 },
   punchCard: {
@@ -218,8 +226,8 @@ const styles = StyleSheet.create({
   punchValue: { color: '#fff', fontSize: 22, fontWeight: '900', marginTop: 2 },
   punchTime: { color: '#A5B4FC', fontSize: 12, marginTop: 4 },
   punchBtn: { borderRadius: radius.pill, overflow: 'hidden' },
-  punchBtnGrad: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
-  punchBtnText: { color: '#fff', fontWeight: '800' },
+  punchBtnGrad: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
+  punchBtnText: { color: '#fff', fontWeight: '800', marginLeft: 8 },
   statsRow: {
     flexDirection: 'row', marginTop: -50,
     marginHorizontal: spacing.lg,
@@ -238,8 +246,8 @@ const styles = StyleSheet.create({
   },
   bannerTitle: { color: '#fff', fontWeight: '800', fontSize: 15 },
   bannerText: { color: '#E0E7FF', fontSize: 12, marginTop: 2 },
-  bannerCta: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999 },
-  bannerCtaText: { color: colors.primary, fontWeight: '800', fontSize: 12 },
+  bannerCta: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999 },
+  bannerCtaText: { color: colors.primary, fontWeight: '800', fontSize: 12, marginRight: 4 },
   tilesWrap: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   link: { color: colors.primary, fontWeight: '700', fontSize: 12 },
   eventIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },

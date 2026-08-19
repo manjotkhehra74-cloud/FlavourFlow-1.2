@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Screen, Card, Button, Row } from '../components/UI';
+import { Screen, Card, Button, Row, NavHeader } from '../components/UI';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -50,10 +50,7 @@ export default function PermissionsScreen() {
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <Ionicons name="shield-checkmark-outline" size={26} color="#fff" />
-        <Text style={styles.h1}>Permissions</Text>
-      </View>
+      <NavHeader title="Permissions" navigation={nav} />
       <ScrollView>
         <Card>
           <Text style={styles.intro}>
@@ -68,7 +65,7 @@ export default function PermissionsScreen() {
           value={loc} onToggle={toggleLocation}
         />
         <PermissionRow
-          icon="finger-print-outline" title="Biometrics (Fingerprint / Face)" color={colors.brand}
+          icon="finger-print-outline" title="Biometrics (Fingerprint / Face)" color={colors.primary}
           desc={bioAvailable === false ? 'Device enrolled biometric nahi hai — skip kar sakte ho.' : 'Punch to pehlaan identity verify hove.'}
           value={bio} onToggle={toggleBio} disabled={bioAvailable === false}
         />
@@ -98,8 +95,8 @@ function PermissionRow({ icon, title, desc, value, onToggle, color, disabled }) 
   return (
     <Card>
       <Row style={{ alignItems: 'flex-start' }}>
-        <View style={[styles.iconWrap, { backgroundColor: (color || colors.brand) + '22' }]}>
-          <Ionicons name={icon} size={22} color={color || colors.brand} />
+        <View style={[styles.iconWrap, { backgroundColor: (color || colors.primary) + '22' }]}>
+          <Ionicons name={icon} size={22} color={color || colors.primary} />
         </View>
         <View style={{ flex: 1, marginLeft: 12 }}>
           <Text style={styles.title}>{title}</Text>
@@ -109,7 +106,7 @@ function PermissionRow({ icon, title, desc, value, onToggle, color, disabled }) 
           value={!!value}
           onValueChange={onToggle}
           disabled={disabled}
-          trackColor={{ true: colors.brand, false: '#cbd5e1' }}
+          trackColor={{ true: colors.primary, false: '#cbd5e1' }}
           thumbColor={value ? '#fff' : '#f1f5f9'}
         />
       </Row>
@@ -127,8 +124,6 @@ function Bullet({ children }) {
 }
 
 const styles = StyleSheet.create({
-  header: { backgroundColor: colors.brand, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  h1: { color: '#fff', fontSize: 20, fontWeight: '800' },
   intro: { color: colors.subtext, lineHeight: 20 },
   iconWrap: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   title: { fontWeight: '800', fontSize: 15 },

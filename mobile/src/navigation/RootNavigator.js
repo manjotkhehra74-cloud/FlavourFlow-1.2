@@ -1,18 +1,19 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Platform,
+  View, Text, TouchableOpacity, StyleSheet, Platform, ActivityIndicator,
 } from 'react-native';
 import { NavigationContainer, DefaultTheme, DrawerActions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
+import { createDrawerNavigator } from '@react-navigation/drawer';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthContext } from '../context/AuthContext';
+import { PunchProvider, usePunch } from '../context/PunchContext';
 import { colors, gradients } from '../theme';
-import { Avatar, GradientView } from '../components/UI';
+import { PulseMark } from '../components/UI';
 
 import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -48,6 +49,7 @@ const navTheme = {
 };
 
 function TabBar({ state, descriptors, navigation }) {
+  const punch = usePunch();
   return (
     <View style={styles.tabBar}>
       {state.routes.map((route, index) => {
@@ -60,12 +62,13 @@ function TabBar({ state, descriptors, navigation }) {
             <TouchableOpacity
               key={route.key}
               style={styles.fabWrap}
-              onPress={() => options.tabOnPress?.()}
+              onPress={() => punch.openPunch()}
               activeOpacity={0.85}
             >
               <LinearGradient colors={gradients.brand} style={styles.fab}>
                 <Ionicons name="finger-print" size={26} color="#fff" />
               </LinearGradient>
+              <Text style={styles.fabLabel}>Punch</Text>
             </TouchableOpacity>
           );
         }
@@ -82,11 +85,13 @@ function TabBar({ state, descriptors, navigation }) {
             }}
             activeOpacity={0.8}
           >
-            <Ionicons
-              name={icon || 'ellipse-outline'}
-              size={22}
-              color={isFocused ? colors.primary : '#94A3B8'}
-            />
+            <View style={[styles.tabIconWrap, isFocused && styles.tabIconWrapOn]}>
+              <Ionicons
+                name={isFocused ? (options.tabBarIconOn || icon || 'ellipse') : (icon || 'ellipse-outline')}
+                size={22}
+                color={isFocused ? colors.primary : '#94A3B8'}
+              />
+            </View>
             <Text style={[styles.tabLabel, { color: isFocused ? colors.primary : '#94A3B8' }]} numberOfLines={1}>
               {label}
             </Text>
@@ -100,22 +105,22 @@ function TabBar({ state, descriptors, navigation }) {
 function MainTabs() {
   return (
     <Tab.Navigator
-      screenOptions={({ navigation }) => ({
+      screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: { display: 'none' },
-      })}
+      }}
       tabBar={(props) => <TabBar {...props} />}
     >
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ title: 'Home', tabBarIcon: 'home-outline' }}
+        options={{ title: 'Home', tabBarIcon: 'home-outline', tabBarIconOn: 'home' }}
       />
       <Tab.Screen
         name="Team"
         component={TeamScreen}
-        options={{ title: 'Team', tabBarIcon: 'people-outline' }}
+        options={{ title: 'Team', tabBarIcon: 'people-outline', tabBarIconOn: 'people' }}
       />
       <Tab.Screen
         name="Punch"
@@ -126,21 +131,21 @@ function MainTabs() {
       <Tab.Screen
         name="Social"
         component={SocialScreen}
-        options={{ title: 'Social', tabBarIcon: 'chatbubbles-outline' }}
+        options={{ title: 'Social', tabBarIcon: 'chatbubbles-outline', tabBarIconOn: 'chatbubbles' }}
       />
       <Tab.Screen
         name="More"
         component={MoreScreen}
-        options={{ title: 'More', tabBarIcon: 'grid-outline' }}
+        options={{ title: 'More', tabBarIcon: 'grid-outline', tabBarIconOn: 'grid' }}
       />
     </Tab.Navigator>
   );
 }
 
 function MoreScreen({ navigation }) {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const items = [
-    { icon: 'person-outline', label: 'My Profile', to: { screen: 'Profile', params: { id: user.id } } },
+    { icon: 'person-outline', label: 'My Profile', to: { screen: 'Profile', params: { id: user?.id } } },
     { icon: 'calendar-outline', label: 'Attendance', to: 'Attendance' },
     { icon: 'time-outline', label: 'Leave Management', to: 'Leaves' },
     { icon: 'headset-outline', label: 'Helpdesk', to: 'Helpdesk' },
@@ -150,8 +155,16 @@ function MoreScreen({ navigation }) {
   ];
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
-      <Text style={styles.moreTitle}>More</Text>
-      {items.filter(i => i.show !== false).map((it, i) => (
+      <View style={styles.moreHead}>
+        <TouchableOpacity
+          style={styles.menuBtn}
+          onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+        >
+          <Ionicons name="menu" size={22} color={colors.navy} />
+        </TouchableOpacity>
+        <Text style={styles.moreTitle}>More</Text>
+      </View>
+      {items.filter((i) => i.show !== false).map((it, i) => (
         <TouchableOpacity
           key={i}
           style={styles.moreRow}
@@ -164,56 +177,79 @@ function MoreScreen({ navigation }) {
           <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
         </TouchableOpacity>
       ))}
+      <TouchableOpacity style={[styles.moreRow, { marginTop: 16 }]} onPress={logout}>
+        <View style={[styles.moreIconWrap, { backgroundColor: colors.redSoft }]}>
+          <Ionicons name="log-out-outline" size={20} color={colors.red} />
+        </View>
+        <Text style={[styles.moreLabel, { color: colors.red }]}>Logout</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
 function CustomDrawerContent(props) {
   const { user, logout } = useContext(AuthContext);
-  const initials = (user?.name || 'U').split(' ').map(w => w[0]).slice(0, 2).join('');
+  const initials = (user?.name || 'U').split(' ').map((w) => w[0]).slice(0, 2).join('');
+  const current = props.state.routeNames[props.state.index];
+
+  const items = [
+    { icon: 'grid-outline', label: 'Dashboard', screen: 'Tabs' },
+    { icon: 'people-outline', label: 'Employees', screen: 'Team', show: user?.role !== 'employee' },
+    { icon: 'time-outline', label: 'Attendance', screen: 'Attendance' },
+    { icon: 'calendar-outline', label: 'Leave Management', screen: 'Leaves' },
+    { icon: 'checkmark-done-outline', label: 'Approvals', screen: 'Approvals', show: user?.role !== 'employee' },
+    { icon: 'people-circle-outline', label: 'Manage Employees', screen: 'AdminUsers', show: user?.role === 'admin' },
+    { icon: 'headset-outline', label: 'Helpdesk', screen: 'Helpdesk' },
+    { icon: 'shield-checkmark-outline', label: 'Permissions', screen: 'Permissions' },
+  ].filter((i) => i.show !== false);
+
   return (
-    <DrawerContentScrollView {...props} contentContainerStyle={{ flex: 1, backgroundColor: colors.navy, paddingTop: 40 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.navy }} edges={['top', 'bottom']}>
       <LinearGradient
         colors={['#1E1B4B', '#0F172A']}
-        style={{ padding: 20, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)' }}
+        style={{ padding: 20, paddingBottom: 22, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)' }}
       >
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 18 }}>
+          <LinearGradient colors={gradients.brand} style={styles.drawerLogo}>
+            <PulseMark color="#fff" size={22} />
+          </LinearGradient>
+          <Text style={styles.drawerBrand}>Pulse HR</Text>
+        </View>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <LinearGradient colors={gradients.brand} style={{ width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: '#fff', fontSize: 20, fontWeight: '800' }}>{initials}</Text>
+          <LinearGradient colors={gradients.brand} style={{ width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: '#fff', fontSize: 18, fontWeight: '800' }}>{initials}</Text>
           </LinearGradient>
           <View style={{ marginLeft: 12, flex: 1 }}>
             <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>{user?.name}</Text>
-            <Text style={{ color: '#A5B4FC', fontSize: 12, textTransform: 'capitalize' }}>{user?.role} · {user?.designation || user?.department || ''}</Text>
+            <Text style={{ color: '#A5B4FC', fontSize: 12, textTransform: 'capitalize' }}>
+              {user?.role} · {user?.designation || user?.department || ''}
+            </Text>
           </View>
         </View>
       </LinearGradient>
 
-      {[
-        { icon: 'grid-outline', label: 'Dashboard', screen: 'Tabs' },
-        { icon: 'people-outline', label: 'Employees', screen: 'Team', show: user?.role !== 'employee' },
-        { icon: 'time-outline', label: 'Attendance', screen: 'Attendance' },
-        { icon: 'calendar-outline', label: 'Leave Management', screen: 'Leaves' },
-        { icon: 'checkmark-done-outline', label: 'Approvals', screen: 'Approvals', show: user?.role !== 'employee' },
-        { icon: 'people-circle-outline', label: 'Manage Employees', screen: 'AdminUsers', show: user?.role === 'admin' },
-        { icon: 'headset-outline', label: 'Helpdesk', screen: 'Helpdesk' },
-        { icon: 'shield-checkmark-outline', label: 'Permissions', screen: 'Permissions' },
-      ].filter(i => i.show !== false).map((it, i) => (
-        <TouchableOpacity
-          key={i}
-          style={styles.drawerRow}
-          onPress={() => props.navigation.navigate(it.screen)}
-        >
-          <Ionicons name={it.icon} size={20} color="#C7D2FE" />
-          <Text style={styles.drawerLabel}>{it.label}</Text>
-        </TouchableOpacity>
-      ))}
+      <View style={{ paddingTop: 10 }}>
+        {items.map((it) => {
+          const active = current === it.screen;
+          return (
+            <TouchableOpacity
+              key={it.screen + it.label}
+              style={[styles.drawerRow, active && styles.drawerRowOn]}
+              onPress={() => props.navigation.navigate(it.screen)}
+            >
+              <Ionicons name={it.icon} size={20} color={active ? '#fff' : '#C7D2FE'} />
+              <Text style={[styles.drawerLabel, active && { color: '#fff' }]}>{it.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
       <View style={{ flex: 1 }} />
-      <TouchableOpacity style={[styles.drawerRow, { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)' }]} onPress={logout}>
+      <TouchableOpacity style={[styles.drawerRow, styles.drawerLogout]} onPress={logout}>
         <Ionicons name="log-out-outline" size={20} color="#FCA5A5" />
         <Text style={[styles.drawerLabel, { color: '#FCA5A5' }]}>Logout</Text>
       </TouchableOpacity>
-    </DrawerContentScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -221,11 +257,8 @@ function DrawerNav() {
   return (
     <Drawer.Navigator
       screenOptions={{
-        headerShown: true,
-        headerStyle: { backgroundColor: colors.navy, elevation: 0, shadowOpacity: 0 },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: '800' },
-        drawerStyle: { width: 280, backgroundColor: colors.navy },
+        headerShown: false,
+        drawerStyle: { width: 292, backgroundColor: colors.navy },
         drawerLabelStyle: { color: '#E0E7FF' },
         drawerActiveBackgroundColor: 'rgba(124,58,237,0.18)',
         drawerActiveTintColor: '#fff',
@@ -234,71 +267,99 @@ function DrawerNav() {
       }}
       drawerContent={(props) => <CustomDrawerContent {...props} />}
     >
-      <Drawer.Screen name="Tabs" component={MainTabs} options={{ title: 'Pulse HR', drawerLabel: 'Dashboard', drawerIcon: ({ color }) => <Ionicons name="grid-outline" size={20} color={color} /> }} />
-      <Drawer.Screen name="Team" component={TeamScreen} options={{ drawerLabel: 'Employees', drawerIcon: ({ color }) => <Ionicons name="people-outline" size={20} color={color} /> }} />
-      <Drawer.Screen name="Attendance" component={AttendanceScreen} options={{ drawerIcon: ({ color }) => <Ionicons name="time-outline" size={20} color={color} /> }} />
-      <Drawer.Screen name="Leaves" component={LeavesScreen} options={{ title: 'Leave Management', drawerIcon: ({ color }) => <Ionicons name="calendar-outline" size={20} color={color} /> }} />
-      <Drawer.Screen name="Helpdesk" component={HelpdeskScreen} options={{ drawerIcon: ({ color }) => <Ionicons name="headset-outline" size={20} color={color} /> }} />
-      <Drawer.Screen name="Approvals" component={ApprovalsScreen} options={{ drawerIcon: ({ color }) => <Ionicons name="checkmark-done-outline" size={20} color={color} /> }} />
-      <Drawer.Screen name="AdminUsers" component={AdminUsersScreen} options={{ title: 'Manage Employees', drawerIcon: ({ color }) => <Ionicons name="people-circle-outline" size={20} color={color} /> }} />
-      <Drawer.Screen name="Permissions" component={PermissionsScreen} options={{ drawerIcon: ({ color }) => <Ionicons name="shield-checkmark-outline" size={20} color={color} /> }} />
+      <Drawer.Screen name="Tabs" component={MainTabs} options={{ title: 'Pulse HR', drawerLabel: 'Dashboard' }} />
+      <Drawer.Screen name="Team" component={TeamScreen} options={{ drawerLabel: 'Employees' }} />
+      <Drawer.Screen name="Attendance" component={AttendanceScreen} />
+      <Drawer.Screen name="Leaves" component={LeavesScreen} options={{ title: 'Leave Management' }} />
+      <Drawer.Screen name="Helpdesk" component={HelpdeskScreen} />
+      <Drawer.Screen name="Approvals" component={ApprovalsScreen} />
+      <Drawer.Screen name="AdminUsers" component={AdminUsersScreen} options={{ title: 'Manage Employees' }} />
+      <Drawer.Screen name="Permissions" component={PermissionsScreen} />
     </Drawer.Navigator>
   );
 }
 
-function HeaderRight() {
-  const { user } = useContext(AuthContext);
-  return (
-    <TouchableOpacity style={{ marginRight: 12 }}>
-      <Ionicons name="notifications-outline" size={22} color="#fff" />
-    </TouchableOpacity>
-  );
-}
-
 export default function RootNavigator() {
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.navy }}>
+        <PulseMark color="#A78BFA" size={36} />
+        <ActivityIndicator color="#fff" style={{ marginTop: 16 }} />
+      </View>
+    );
+  }
+
   return (
-    <NavigationContainer theme={navTheme}>
-      <Stack.Navigator
-        screenOptions={{
-          headerStyle: { backgroundColor: colors.primary },
-          headerTintColor: '#fff',
-          headerTitleStyle: { fontWeight: '800' },
-          headerShadowVisible: false,
-        }}
-      >
-        {!user ? (
-          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-        ) : (
-          <>
-            <Stack.Screen name="Drawer" component={DrawerNav} options={{ headerShown: false }} />
-            <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
-            <Stack.Screen name="NewLeave" component={NewLeaveScreen} options={{ title: 'Apply Leave', presentation: 'modal' }} />
-            <Stack.Screen name="NewAttendance" component={NewAttendanceRequestScreen} options={{ title: 'Regularise Attendance', presentation: 'modal' }} />
-            <Stack.Screen name="NewPost" component={NewPostScreen} options={{ title: 'New Post', presentation: 'modal' }} />
-            <Stack.Screen name="NewTicket" component={NewTicketScreen} options={{ title: 'New Ticket', presentation: 'modal' }} />
-          </>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <PunchProvider enabled={!!user}>
+      <NavigationContainer theme={navTheme}>
+        <Stack.Navigator
+          screenOptions={{
+            headerStyle: { backgroundColor: colors.navy },
+            headerTintColor: '#fff',
+            headerTitleStyle: { fontWeight: '800' },
+            headerShadowVisible: false,
+          }}
+        >
+          {!user ? (
+            <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+          ) : (
+            <>
+              <Stack.Screen name="Drawer" component={DrawerNav} options={{ headerShown: false }} />
+              <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
+              <Stack.Screen name="NewLeave" component={NewLeaveScreen} options={{ headerShown: false, presentation: 'modal' }} />
+              <Stack.Screen name="NewAttendance" component={NewAttendanceRequestScreen} options={{ headerShown: false, presentation: 'modal' }} />
+              <Stack.Screen name="NewAttendanceRequest" component={NewAttendanceRequestScreen} options={{ headerShown: false, presentation: 'modal' }} />
+              <Stack.Screen name="NewPost" component={NewPostScreen} options={{ headerShown: false, presentation: 'modal' }} />
+              <Stack.Screen name="NewTicket" component={NewTicketScreen} options={{ headerShown: false, presentation: 'modal' }} />
+            </>
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </PunchProvider>
   );
 }
 
 const styles = StyleSheet.create({
   tabBar: {
-    flexDirection: 'row', backgroundColor: '#fff',
-    paddingHorizontal: 8, paddingTop: 8, paddingBottom: Platform.OS === 'ios' ? 24 : 10,
-    borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    shadowColor: '#0f172a', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 12,
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    paddingHorizontal: 6,
+    paddingTop: 8,
+    paddingBottom: Platform.OS === 'ios' ? 22 : 10,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 16,
   },
-  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 4 },
+  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 2 },
+  tabIconWrap: { width: 36, height: 28, alignItems: 'center', justifyContent: 'center', borderRadius: 10 },
+  tabIconWrapOn: { backgroundColor: colors.primarySoft },
   tabLabel: { fontSize: 10, fontWeight: '700', marginTop: 2 },
-  fabWrap: { alignItems: 'center', justifyContent: 'center', marginTop: -28 },
-  fab: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', shadowColor: '#4C1D95', shadowOpacity: 0.5, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
-  moreTitle: { fontSize: 28, fontWeight: '900', padding: 20, color: colors.text },
-  moreRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 20, backgroundColor: '#fff', marginHorizontal: 16, marginVertical: 4, borderRadius: 16 },
+  fabWrap: { alignItems: 'center', justifyContent: 'flex-start', marginTop: -26, width: 72 },
+  fab: {
+    width: 58, height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#4C1D95', shadowOpacity: 0.45, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 8,
+    borderWidth: 3, borderColor: '#fff',
+  },
+  fabLabel: { fontSize: 10, fontWeight: '800', color: colors.primary, marginTop: 4 },
+  moreHead: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 },
+  menuBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+  moreTitle: { fontSize: 28, fontWeight: '900', color: colors.text },
+  moreRow: {
+    flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 20,
+    backgroundColor: '#fff', marginHorizontal: 16, marginVertical: 4, borderRadius: 16,
+  },
   moreIconWrap: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
   moreLabel: { flex: 1, marginLeft: 12, fontSize: 15, fontWeight: '700', color: colors.text },
-  drawerRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingVertical: 14 },
-  drawerLabel: { color: '#E0E7FF', fontSize: 14, fontWeight: '700' },
+  drawerLogo: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  drawerBrand: { color: '#fff', fontSize: 18, fontWeight: '900', marginLeft: 10, letterSpacing: 0.3 },
+  drawerRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 13, marginHorizontal: 10, borderRadius: 12 },
+  drawerRowOn: { backgroundColor: 'rgba(124,58,237,0.28)' },
+  drawerLabel: { color: '#E0E7FF', fontSize: 14, fontWeight: '700', marginLeft: 14 },
+  drawerLogout: { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)', marginHorizontal: 0, borderRadius: 0, paddingHorizontal: 30 },
 });

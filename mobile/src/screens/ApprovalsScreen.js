@@ -3,7 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, RefreshControl, StyleSheet, Ale
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Api } from '../api/client';
-import { Screen, Card, Avatar, Badge, Button, Row, EmptyState } from '../components/UI';
+import { Screen, Card, Avatar, Badge, Button, Row, EmptyState, NavHeader } from '../components/UI';
 import { colors, avatarColorFor, fmtDate } from '../theme';
 
 export default function ApprovalsScreen({ navigation }) {
@@ -52,11 +52,7 @@ export default function ApprovalsScreen({ navigation }) {
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
-        <Text style={styles.title}>Approvals</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <NavHeader title="Approvals" navigation={navigation} />
 
       <View style={styles.tabs}>
         <Tab label={`Attendance (${items.length})`} active={tab === 'attendance'} onPress={() => { setTab('attendance'); setSelected(new Set()); }} />
@@ -86,7 +82,7 @@ export default function ApprovalsScreen({ navigation }) {
           const checked = selected.has(item.id);
           return (
             <TouchableOpacity onPress={() => toggle(item.id)} activeOpacity={0.9}>
-              <Card style={checked ? { borderColor: colors.brand, borderWidth: 2 } : undefined}>
+              <Card style={checked ? { borderColor: colors.primary, borderWidth: 2 } : undefined}>
                 <Row style={{ alignItems: 'flex-start' }}>
                   <View style={[styles.checkbox, checked && styles.checkboxOn]}>
                     {checked ? <Ionicons name="checkmark" size={16} color="#fff" /> : null}
@@ -130,16 +126,14 @@ function Tab({ label, active, onPress }) {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: colors.brand, gap: 14 },
-  title: { color: '#fff', fontSize: 18, fontWeight: '800', flex: 1 },
-  tabs: { flexDirection: 'row', backgroundColor: '#fff', padding: 6, margin: 12, borderRadius: 12, gap: 6 },
+  tabs: { flexDirection: 'row', backgroundColor: '#fff', padding: 6, margin: 12, borderRadius: 12 },
   tab: { flex: 1, alignItems: 'center', padding: 10, borderRadius: 8 },
-  tabActive: { backgroundColor: colors.brand },
+  tabActive: { backgroundColor: colors.primary },
   actionBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: colors.brandDark, paddingHorizontal: 16, paddingVertical: 12, marginHorizontal: 12, borderRadius: 12,
+    backgroundColor: colors.navy, paddingHorizontal: 16, paddingVertical: 12, marginHorizontal: 12, borderRadius: 12,
   },
   actBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
   checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: colors.border, marginRight: 10, alignItems: 'center', justifyContent: 'center' },
-  checkboxOn: { backgroundColor: colors.brand, borderColor: colors.brand },
+  checkboxOn: { backgroundColor: colors.primary, borderColor: colors.primary },
 });

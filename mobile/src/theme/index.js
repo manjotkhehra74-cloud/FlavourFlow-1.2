@@ -6,6 +6,10 @@ export const colors = {
   primaryLight: '#8B5CF6',
   primarySoft: '#EDE9FE',
   accent: '#A78BFA',
+  // Aliases so older screens that still reference brand/purple keep compiling
+  brand: '#6D28D9',
+  brandDark: '#4C1D95',
+  purple: '#8B5CF6',
 
   // Deep navy (screens/drawer)
   navy: '#0F172A',

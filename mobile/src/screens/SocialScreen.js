@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { Screen, Card, Avatar, Button, Row, EmptyState } from '../components/UI';
+import { Screen, Card, Avatar, Row, EmptyState, NavHeader } from '../components/UI';
 import { colors, avatarColorFor, fmtTime } from '../theme';
 
 export default function SocialScreen({ navigation }) {
@@ -37,14 +37,16 @@ export default function SocialScreen({ navigation }) {
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <Text style={styles.title}>Social Wall</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('NewPost', { onCreated: load })}
-          style={styles.newBtn}>
-          <Ionicons name="create-outline" size={18} color="#fff" />
-          <Text style={{ color: '#fff', fontWeight: '700', marginLeft: 6 }}>Post</Text>
-        </TouchableOpacity>
-      </View>
+      <NavHeader
+        title="Social Wall"
+        navigation={navigation}
+        right={
+          <TouchableOpacity onPress={() => navigation.navigate('NewPost', { onCreated: load })} style={styles.newBtn}>
+            <Ionicons name="create-outline" size={16} color="#fff" />
+            <Text style={{ color: '#fff', fontWeight: '700', marginLeft: 6, fontSize: 12 }}>Post</Text>
+          </TouchableOpacity>
+        }
+      />
 
       <FlatList
         data={posts}
@@ -53,8 +55,8 @@ export default function SocialScreen({ navigation }) {
         ListHeaderComponent={
           <View>
             {events.today?.length ? (
-              <Card style={{ backgroundColor: '#ecfdf5', borderWidth: 1, borderColor: '#a7f3d0' }}>
-                <Text style={styles.eventTitle}>🎂 Today's celebrations</Text>
+              <Card style={{ backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: '#DDD6FE' }}>
+                <Text style={styles.eventTitle}>Today's celebrations</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
                   {events.today.map(p => (
                     <View key={p.id} style={styles.eventCard}>
@@ -129,14 +131,12 @@ export default function SocialScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: colors.brand },
-  title: { color: '#fff', fontSize: 20, fontWeight: '900' },
   newBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999 },
-  eventTitle: { fontWeight: '800', color: colors.brand },
+  eventTitle: { fontWeight: '800', color: colors.primary },
   eventCard: { width: 110, backgroundColor: '#fff', borderRadius: 14, padding: 10, alignItems: 'center', marginRight: 10, marginTop: 4 },
   eventName: { fontWeight: '800', marginTop: 6 },
   eventSub: { color: colors.subtext, fontSize: 11 },
-  wishBtn: { marginTop: 8, backgroundColor: colors.brand, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
+  wishBtn: { marginTop: 8, backgroundColor: colors.primary, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
   section: { fontWeight: '800', marginBottom: 6 },
   sub: { color: colors.subtext, marginTop: 4 },
   feedTitle: { fontSize: 15, fontWeight: '800', marginHorizontal: 20, marginTop: 10, marginBottom: 4 },

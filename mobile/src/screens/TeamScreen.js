@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { Screen, Avatar, Badge, EmptyState } from '../components/UI';
+import { Screen, Avatar, Badge, EmptyState, NavHeader } from '../components/UI';
 import { colors, avatarColorFor } from '../theme';
 
 export default function TeamScreen({ navigation }) {
@@ -22,20 +22,15 @@ export default function TeamScreen({ navigation }) {
   useFocusEffect(useCallback(() => { load(); }, [load]));
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
-  const filtered = users.filter(u =>
+  const filtered = users.filter((u) =>
     !q || u.name.toLowerCase().includes(q.toLowerCase()) ||
-    u.emp_code.toLowerCase().includes(q.toLowerCase()) ||
+    (u.emp_code || '').toLowerCase().includes(q.toLowerCase()) ||
     u.designation?.toLowerCase().includes(q.toLowerCase())
   );
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
-        <Text style={styles.title}>{isManager ? 'My team' : 'Directory'}</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
+      <NavHeader title={isManager ? 'My team' : 'Directory'} navigation={navigation} />
       <View style={styles.searchWrap}>
         <Ionicons name="search" size={18} color={colors.subtext} />
         <TextInput
@@ -71,18 +66,16 @@ export default function TeamScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: colors.brand, gap: 14 },
-  title: { color: '#fff', fontSize: 18, fontWeight: '800', flex: 1 },
   searchWrap: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
+    flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#fff', margin: 12, paddingHorizontal: 14,
-    borderRadius: 12, borderWidth: 1, borderColor: colors.border,
+    borderRadius: 14, borderWidth: 1, borderColor: colors.border,
   },
-  search: { flex: 1, paddingVertical: 12, fontSize: 15 },
+  search: { flex: 1, paddingVertical: 12, fontSize: 15, marginLeft: 8, color: colors.text },
   row: {
     flexDirection: 'row', alignItems: 'center', padding: 14,
-    backgroundColor: '#fff', marginHorizontal: 12, marginVertical: 4, borderRadius: 12,
+    backgroundColor: '#fff', marginHorizontal: 12, marginVertical: 4, borderRadius: 16,
   },
-  name: { fontWeight: '700', fontSize: 15 },
+  name: { fontWeight: '700', fontSize: 15, color: colors.text },
   role: { color: colors.subtext, fontSize: 12, marginTop: 2 },
 });

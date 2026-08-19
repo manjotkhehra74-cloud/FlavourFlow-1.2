@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, Image, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { DrawerActions } from '@react-navigation/native';
 import { colors, radius, spacing, gradients, initials, avatarColorFor } from '../theme';
 
 function v(x, fallback) { return x === undefined ? fallback : x; }
@@ -94,19 +96,86 @@ export function Button({
   );
 }
 
-export function Input({ label, icon, error, ...props }) {
+export function Input({ label, icon, error, multiline, style, ...props }) {
   return (
     <View style={{ marginBottom: spacing.md }}>
       {label ? <Text style={styles.inputLabel}>{label}</Text> : null}
-      <View style={[styles.inputWrap, error && { borderColor: colors.red }]}>
-        {icon ? <Ionicons name={icon} size={18} color={colors.subtext} style={{ marginRight: 10 }} /> : null}
+      <View style={[
+        styles.inputWrap,
+        multiline && { height: undefined, minHeight: 50, alignItems: 'flex-start', paddingVertical: 12 },
+        error && { borderColor: colors.red },
+      ]}>
+        {icon ? <Ionicons name={icon} size={18} color={colors.subtext} style={{ marginRight: 10, marginTop: multiline ? 2 : 0 }} /> : null}
         <TextInput
           placeholderTextColor={colors.subtext}
-          style={styles.input}
+          style={[styles.input, multiline && { minHeight: 88, textAlignVertical: 'top' }, style]}
+          multiline={multiline}
           {...props}
         />
       </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
+    </View>
+  );
+}
+
+export function PulseMark({ color = '#fff', size = 28 }) {
+  const bars = [10, 18, 26, 34, 26, 18, 10];
+  const h = size * 0.7;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', height: h }}>
+      {bars.map((b, i) => (
+        <View
+          key={i}
+          style={{
+            width: Math.max(3, size * 0.08),
+            height: (b / 34) * h,
+            backgroundColor: color,
+            borderRadius: 3,
+            marginHorizontal: 1.5,
+          }}
+        />
+      ))}
+    </View>
+  );
+}
+
+export function NavHeader({ title, navigation, right, mode = 'menu' }) {
+  const onLeft = () => {
+    if (mode === 'back' && navigation?.canGoBack?.()) navigation.goBack();
+    else navigation?.dispatch?.(DrawerActions.openDrawer());
+  };
+  return (
+    <LinearGradient colors={['#1E1B4B', '#4C1D95']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+      <SafeAreaView edges={['top']}>
+        <View style={styles.navRow}>
+          <TouchableOpacity onPress={onLeft} style={styles.navIconBtn} hitSlop={10}>
+            <Ionicons name={mode === 'back' ? 'arrow-back' : 'menu'} size={22} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.navTitle} numberOfLines={1}>{title}</Text>
+          {right || <View style={{ width: 36 }} />}
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
+  );
+}
+
+export function Chip({ label, active, onPress, style }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={[styles.chip, active && styles.chipActive, style]}
+      activeOpacity={0.8}
+    >
+      <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+export function StatPill({ label, value, color }) {
+  return (
+    <View style={[styles.pill, { borderColor: (color || colors.primary) + '55' }]}>
+      <Text style={{ fontSize: 18, fontWeight: '800', color: color || colors.primary }}>{value}</Text>
+      <Text style={{ fontSize: 12, color: colors.subtext, marginTop: 2 }}>{label}</Text>
     </View>
   );
 }
@@ -234,6 +303,14 @@ const styles = StyleSheet.create({
   quickIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   quickLabel: { fontSize: 12, fontWeight: '700', color: colors.text, marginTop: 6 },
   sectionTitle: { fontSize: 16, fontWeight: '800', color: colors.text },
+  navRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12 },
+  navIconBtn: { width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
+  navTitle: { flex: 1, color: '#fff', fontSize: 18, fontWeight: '800', marginHorizontal: 12 },
+  chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border, marginRight: 8, marginBottom: 8 },
+  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipText: { fontWeight: '700', color: colors.text, textTransform: 'capitalize' },
+  chipTextActive: { color: '#fff' },
+  pill: { flex: 1, borderWidth: 1, borderRadius: 12, padding: 12, alignItems: 'center', backgroundColor: '#fff' },
 });
 
 export { colors, radius, spacing, gradients };

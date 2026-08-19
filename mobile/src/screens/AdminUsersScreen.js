@@ -7,7 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Api } from '../api/client';
 import { colors, fmtDate } from '../theme';
-import { Screen, Card, Button, Avatar, Badge } from '../components/UI';
+import { Screen, Card, Button, Avatar, Badge, NavHeader } from '../components/UI';
 
 const emptyForm = {
   name: '', email: '', password: '', role: 'employee',
@@ -95,14 +95,15 @@ export default function AdminUsersScreen({ navigation }) {
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <Ionicons name="people-circle-outline" size={24} color="#fff" />
-        <Text style={styles.title}>Manage Employees</Text>
-        <View style={{ flex: 1 }} />
-        <TouchableOpacity onPress={openNew} style={styles.addBtn}>
-          <Ionicons name="add" size={20} color="#fff" />
-        </TouchableOpacity>
-      </View>
+      <NavHeader
+        title="Manage Employees"
+        navigation={navigation}
+        right={
+          <TouchableOpacity onPress={openNew} style={styles.addBtn}>
+            <Ionicons name="add" size={20} color="#fff" />
+          </TouchableOpacity>
+        }
+      />
 
       <FlatList
         data={users}
@@ -128,8 +129,8 @@ export default function AdminUsersScreen({ navigation }) {
             </View>
             <View style={styles.actions}>
               <TouchableOpacity onPress={() => openEdit(item)} style={styles.actionBtn}>
-                <Ionicons name="create-outline" size={18} color={colors.brand} />
-                <Text style={[styles.actionText, { color: colors.brand }]}>Edit</Text>
+                <Ionicons name="create-outline" size={18} color={colors.primary} />
+                <Text style={[styles.actionText, { color: colors.primary }]}>Edit</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => onDelete(item)} style={styles.actionBtn}>
                 <Ionicons name="trash-outline" size={18} color={colors.red} />
@@ -190,8 +191,6 @@ function Field({ label, children }) {
 }
 
 const styles = StyleSheet.create({
-  header: { backgroundColor: colors.brand, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  title: { color: '#fff', fontSize: 18, fontWeight: '800' },
   addBtn: { backgroundColor: 'rgba(255,255,255,0.2)', padding: 8, borderRadius: 999 },
   card: { marginBottom: 12 },
   row: { flexDirection: 'row', alignItems: 'center' },
@@ -212,6 +211,6 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 12, fontSize: 15, color: colors.text },
   roleRow: { flexDirection: 'row', gap: 8 },
   roleChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bg },
-  roleChipOn: { backgroundColor: colors.brand, borderColor: colors.brand },
+  roleChipOn: { backgroundColor: colors.primary, borderColor: colors.primary },
   roleText: { fontSize: 12, fontWeight: '800', color: colors.subtext },
 });

@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView, Alert,
+  View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Api, setToken } from '../api/client';
-import { colors, radius, spacing } from '../theme';
-import { Input, Button, GradientView } from '../components/UI';
+import { colors, spacing } from '../theme';
+import { Input, Button, PulseMark } from '../components/UI';
+import { useAuth } from '../context/AuthContext';
 
-export default function LoginScreen({ navigation }) {
+export default function LoginScreen() {
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -16,12 +17,10 @@ export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   const onLogin = async () => {
-    if (!email || !password) return Alert.alert('Missing', 'Email te password pao.');
+    if (!email || !password) return Alert.alert('Missing', 'Please enter email and password.');
     setLoading(true);
     try {
-      const res = await Api.login(email.trim().toLowerCase(), password);
-      await setToken(res.token);
-      // App reloads via auth state; nothing more to do.
+      await login(email.trim().toLowerCase(), password);
     } catch (e) {
       Alert.alert('Login failed', e.message);
     } finally {
@@ -47,7 +46,7 @@ export default function LoginScreen({ navigation }) {
                 colors={['#7C3AED', '#4F46E5']}
                 style={styles.logoWrap}
               >
-                <PulseMark color="#fff" />
+                <PulseMark color="#fff" size={40} />
               </LinearGradient>
               <Text style={styles.brand}>Pulse HR</Text>
               <Text style={styles.tagline}>People. Purpose. Performance.</Text>
@@ -77,16 +76,21 @@ export default function LoginScreen({ navigation }) {
               />
 
               <View style={styles.rememberRow}>
-                <TouchableOpacity style={styles.check} onPress={() => setRemember(v => !v)}>
+                <TouchableOpacity style={styles.check} onPress={() => setRemember((v) => !v)}>
                   <Ionicons
                     name={remember ? 'checkbox' : 'square-outline'}
                     size={20} color={remember ? colors.primary : colors.subtext}
                   />
                   <Text style={styles.rememberText}>Remember me</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => Alert.alert('Reset password', 'Admin naal rabta karo.')}>
-                  <Text style={styles.forgot}>Forgot?</Text>
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <TouchableOpacity onPress={() => setShowPw((v) => !v)} style={{ marginRight: 14 }}>
+                    <Text style={styles.forgot}>{showPw ? 'Hide' : 'Show'}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => Alert.alert('Reset password', 'Please contact your admin.')}>
+                    <Text style={styles.forgot}>Forgot?</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
 
               <Button
@@ -123,18 +127,6 @@ export default function LoginScreen({ navigation }) {
           </ScrollView>
         </KeyboardAvoidingView>
       </LinearGradient>
-    </View>
-  );
-}
-
-function PulseMark({ color = '#fff', size = 56 }) {
-  // simple pulse-bars glyph
-  const bars = [10, 18, 26, 34, 26, 18, 10];
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, height: size * 0.55 }}>
-      {bars.map((h, i) => (
-        <View key={i} style={{ width: 6, height: h / 34 * (size * 0.55), backgroundColor: color, borderRadius: 3 }} />
-      ))}
     </View>
   );
 }

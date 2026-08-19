@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, RefreshControl, StyleSheet, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import { Api } from '../api/client';
-import { Screen, Card, Badge, Button, Row, EmptyState } from '../components/UI';
+import { Screen, Card, Badge, Button, Row, EmptyState, NavHeader } from '../components/UI';
 import { colors } from '../theme';
 
 const CATEGORIES = { it: '💻 IT', hr: '🧑‍💼 HR', payroll: '💰 Payroll', facilities: '🏢 Facilities' };
@@ -28,11 +27,7 @@ export default function HelpdeskScreen({ navigation }) {
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
-        <Text style={styles.title}>Helpdesk</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <NavHeader title="Helpdesk" navigation={navigation} />
 
       <FlatList
         data={tickets}
@@ -48,8 +43,9 @@ export default function HelpdeskScreen({ navigation }) {
               </Row>
               {item.user_name ? <Text style={{ color: colors.subtext, marginTop: 4, fontSize: 12 }}>by {item.user_name}</Text> : null}
               <Text style={{ marginTop: 6, color: colors.text }}>{item.description}</Text>
-              <Row style={{ marginTop: 10, gap: 8 }}>
+              <Row style={{ marginTop: 10 }}>
                 <Badge text={CATEGORIES[item.category] || item.category} color={colors.blue} />
+                <View style={{ width: 8 }} />
                 <Badge text={item.priority} color={item.priority === 'high' ? colors.red : colors.subtext} />
               </Row>
               <Text style={{ marginTop: 8, fontSize: 11, color: colors.subtext }}>Tap to advance status →</Text>
@@ -59,13 +55,8 @@ export default function HelpdeskScreen({ navigation }) {
       />
 
       <View style={{ padding: 16 }}>
-        <Button title="+ Raise a ticket" onPress={() => navigation.navigate('NewTicket', { onCreated: load })} />
+        <Button title="Raise a ticket" icon="add" onPress={() => navigation.navigate('NewTicket', { onCreated: load })} />
       </View>
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: colors.brand, gap: 14 },
-  title: { color: '#fff', fontSize: 18, fontWeight: '800', flex: 1 },
-});
