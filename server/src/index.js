@@ -29,6 +29,7 @@ app.use('/api/tickets', ticketRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/meta', require('./routes/meta'));
+app.use('/api/erp', require('./routes/erp'));
 
 app.use((err, req, res, next) => {
   console.error(err);
