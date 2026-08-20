@@ -1,254 +1,231 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Alert } from 'react-native';
 import { useFocusEffect, DrawerActions } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { usePunch } from '../context/PunchContext';
-import {
-  Screen, Card, Row, QuickTile, SectionTitle,
-} from '../components/UI';
-import { colors, radius, spacing, gradients, greeting, fmtTime } from '../theme';
-import { scheduleDailyReminder, ensureNotificationPermission } from '../utils/permissions';
+import { colors, gradients, radius, spacing } from '../theme';
 
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
   const punch = usePunch();
   const [summary, setSummary] = useState(null);
   const [today, setToday] = useState(null);
-  const [events, setEvents] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  const isPrivileged = user?.role !== 'employee';
 
   const load = useCallback(async () => {
     try {
-      const [s, t] = await Promise.all([Api.summary(), Api.attendanceToday()]);
-      setSummary(s);
-      setToday(t.today);
-      if (punch.setToday) punch.setToday(t.today);
-      try {
-        const ev = await Api.events();
-        const list = (ev.today || []).map((e) => ({
-          type: e.event === 'birthday' ? 'birthday' : 'anniversary',
-          title: e.event === 'birthday' ? `${e.name}'s birthday` : `${e.name}'s work anniversary`,
-          subtitle: e.years ? `${e.years} years` : (e.designation || ''),
-        }));
-        setEvents(list);
-      } catch {}
-    } catch (e) { Alert.alert('Error', e.message); }
+      const [s, t] = await Promise.all([Api.summary().catch(()=>null), Api.attendanceToday().catch(()=>({today:null}))]);
+      if (s) setSummary(s);
+      if (t) {
+        setToday(t.today);
+        if (punch.setToday) punch.setToday(t.today);
+      }
+    } catch (e) { }
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  useEffect(() => {
-    const unsub = punch.subscribe?.(load);
-    return () => { if (typeof unsub === 'function') unsub(); };
-  }, [punch, load]);
-
-  useEffect(() => {
-    (async () => { await ensureNotificationPermission(); await scheduleDailyReminder(10, 0); })();
-  }, []);
-
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
-  const initial = (user?.name || '').split(' ').map((w) => w[0]).slice(0, 2).join('');
   const hasPunched = !!today?.clock_in;
-  const month = summary?.monthStats || {};
-  const pendingCount = isPrivileged
-    ? (summary?.pending?.teamApprovals || 0) + (summary?.pendingLeaves || 0)
-    : (summary?.pending?.attendanceRequests || 0) + (summary?.pending?.leaves || 0);
+  const presentPct = 68.6;
 
   return (
-    <Screen>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />}
-      >
-        <LinearGradient
-          colors={['#1E1B4B', '#4C1D95']}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={styles.header}
-        >
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <ScrollView showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#7C3AED" />}>
+        {/* Header */}
+        <View style={styles.header}>
           <View style={styles.headerTop}>
-            <TouchableOpacity
-              style={styles.menuBtn}
-              onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
-            >
-              <Ionicons name="menu" size={20} color="#fff" />
+            <TouchableOpacity style={styles.menuBtn} onPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
+              <Ionicons name="menu" size={22} color="#fff" />
             </TouchableOpacity>
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.greeting}>{greeting()}{user?.name ? ', ' + user.name.split(' ')[0] : ''} 👋</Text>
-              <Text style={styles.role}>{user?.designation || user?.role || 'Member'}</Text>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.greet}>Good Morning, {user?.name?.split(' ')[0] || 'Manjot'}! 👋</Text>
+              <Text style={styles.subGreet}>Here's what's happening in your organization today.</Text>
             </View>
-            <TouchableOpacity onPress={() => navigation.navigate('Profile', { id: user.id })}>
-              <LinearGradient colors={gradients.brand} style={styles.avatar}>
-                <Text style={styles.avatarText}>{initial}</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+            <TouchableOpacity style={styles.headerIcon}><Ionicons name="search" size={18} color="#fff" /></TouchableOpacity>
+            <TouchableOpacity style={styles.headerIcon}><Ionicons name="notifications-outline" size={18} color="#fff" /><View style={styles.badge}><Text style={styles.badgeText}>8</Text></View></TouchableOpacity>
+            <View style={styles.avatar}><Text style={styles.avatarText}>{(user?.name||'U').split(' ').map(w=>w[0]).slice(0,2).join('')}</Text></View>
           </View>
 
-          <View style={styles.punchCard}>
-            <View style={{ flex: 1, paddingRight: 10 }}>
-              <Text style={styles.punchLabel}>Today's attendance</Text>
-              <Text style={styles.punchValue}>{hasPunched ? 'Punched in' : 'Not marked yet'}</Text>
-              {hasPunched ? (
-                <Text style={styles.punchTime}>In: {fmtTime(today.clock_in)}  {today.status ? `· ${today.status.toUpperCase()}` : ''}</Text>
-              ) : (
-                <Text style={styles.punchTime}>{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })}</Text>
-              )}
+          {/* Top Stats */}
+          <View style={styles.topStats}>
+            <View style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: '#7C3AED22' }]}><Ionicons name="people" size={18} color={colors.primary} /></View>
+              <Text style={styles.statLabel}>Total Employees</Text>
+              <Text style={styles.statValue}>1,248</Text>
+              <Text style={styles.statSub}>↑ 12 this month</Text>
             </View>
-            <TouchableOpacity
-              onPress={() => punch.openPunch({ today })}
-              style={styles.punchBtn}
-              activeOpacity={0.85}
-            >
-              <LinearGradient colors={gradients.brand} style={styles.punchBtnGrad}>
-                <Ionicons name={hasPunched ? 'log-out-outline' : 'finger-print-outline'} size={26} color="#fff" />
+            <View style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: '#10B98122' }]}><Ionicons name="checkmark-circle" size={18} color={colors.green} /></View>
+              <Text style={styles.statLabel}>Present Today</Text>
+              <Text style={styles.statValue}>856</Text>
+              <Text style={[styles.statSub, { color: colors.green }]}>↑ 68.6%</Text>
+            </View>
+            <View style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: '#F59E0B22' }]}><Ionicons name="airplane" size={18} color={colors.orange} /></View>
+              <Text style={styles.statLabel}>On Leave</Text>
+              <Text style={styles.statValue}>98</Text>
+              <Text style={styles.statSub}>↑ 7.8%</Text>
+            </View>
+            <View style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: '#3B82F622' }]}><Ionicons name="grid" size={18} color={colors.blue} /></View>
+              <Text style={styles.statLabel}>Departments</Text>
+              <Text style={styles.statValue}>18</Text>
+              <Text style={[styles.statSub, { color: colors.green }]}>↑ Active</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Attendance Overview */}
+        <View style={[styles.card, { marginTop: -18 }]}>
+          <View style={styles.cardHead}>
+            <Text style={styles.cardTitle}>Attendance Overview</Text>
+            <TouchableOpacity><Text style={styles.viewReport}>View Report</Text></TouchableOpacity>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
+            <View style={styles.donutWrap}>
+              <View style={styles.donut}><Text style={styles.donutPct}>{presentPct}%</Text><Text style={styles.donutLabel}>Present</Text></View>
+              <View style={[styles.donutRing, { borderColor: colors.primary, borderRightColor: '#334155', borderBottomColor: '#334155' }]} />
+            </View>
+            <View style={{ flex: 1, marginLeft: 16 }}>
+              <View style={styles.legendRow}><View style={[styles.dot, { backgroundColor: colors.primary }]} /><Text style={styles.legendText}>Present</Text><Text style={styles.legendVal}>856 (68.6%)</Text></View>
+              <View style={styles.legendRow}><View style={[styles.dot, { backgroundColor: '#6B7280' }]} /><Text style={styles.legendText}>Absent</Text><Text style={styles.legendVal}>294 (23.6%)</Text></View>
+              <View style={styles.legendRow}><View style={[styles.dot, { backgroundColor: colors.orange }]} /><Text style={styles.legendText}>On Leave</Text><Text style={styles.legendVal}>98 (7.8%)</Text></View>
+              <View style={styles.legendRow}><View style={[styles.dot, { backgroundColor: colors.pink }]} /><Text style={styles.legendText}>Late</Text><Text style={styles.legendVal}>32 (2.6%)</Text></View>
+            </View>
+            <View style={{ flex: 0.9, marginLeft: 8, height: 80, flexDirection: 'row', alignItems: 'flex-end', gap: 4 }}>
+              {[55,85,60,75,70,65,45,30].map((h,i)=><View key={i} style={{ flex: 1, height: h, backgroundColor: i===1? colors.primary : '#475569', borderRadius: 4 }} />)}
+            </View>
+          </View>
+          <Text style={styles.xLabels}>Mon  Tue  Wed  Thu  Fri  Sat  Sun</Text>
+        </View>
+
+        {/* Today's Punch */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Today's Attendance</Text>
+          <View style={styles.punchRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.punchLabel}>{hasPunched ? 'Punched in' : 'Not marked yet'}</Text>
+              <Text style={styles.punchTime}>{hasPunched ? today.clock_in.slice(11,16) : new Date().toLocaleDateString('en-IN',{weekday:'long'})}</Text>
+            </View>
+            <TouchableOpacity onPress={() => punch.openPunch({ today })} style={styles.punchBtn}>
+              <LinearGradient colors={gradients.brand} style={styles.punchGrad}>
+                <Ionicons name={hasPunched ? 'log-out-outline' : 'finger-print-outline'} size={20} color="#fff" />
                 <Text style={styles.punchBtnText}>{hasPunched ? 'Punch out' : 'Punch in'}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
-        </LinearGradient>
-
-        <View style={styles.statsRow}>
-          <StatMini label="Present" value={month.present ?? 0} color={colors.green} icon="checkmark-circle" />
-          <StatMini label="Late" value={month.late ?? 0} color={colors.orange} icon="time" />
-          <StatMini label="WFH" value={month.wfh ?? 0} color={colors.blue} icon="home" />
-          <StatMini label="Leaves" value={month.on_leave ?? 0} color={colors.primary} icon="calendar" />
         </View>
 
-        {isPrivileged ? (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => navigation.navigate('Approvals')}
-            style={{ marginHorizontal: spacing.lg, marginTop: spacing.md }}
-          >
-            <LinearGradient colors={gradients.brand} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.banner}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.bannerTitle}>Stay on track! 📋</Text>
-                <Text style={styles.bannerText}>{pendingCount} approvals pending</Text>
-              </View>
-              <View style={styles.bannerCta}>
-                <Text style={styles.bannerCtaText}>Review</Text>
-                <Ionicons name="arrow-forward" size={14} color={colors.primary} />
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
-        ) : null}
-
-        <View style={{ padding: spacing.lg, paddingTop: 0 }}>
-          <SectionTitle>Quick Access</SectionTitle>
-          <View style={styles.tilesWrap}>
-            <QuickTile icon="calendar-outline" label="Apply leave" color={colors.primary}
-              onPress={() => navigation.navigate('NewLeave')} />
-            <QuickTile icon="time-outline" label="Regularise" color={colors.orange}
-              onPress={() => navigation.navigate('NewAttendance')} />
-            <QuickTile icon="people-outline" label="Team" color={colors.teal}
-              onPress={() => navigation.navigate('Team')} />
-            <QuickTile icon="gift-outline" label="Wishes" color={colors.pink}
-              onPress={() => navigation.navigate('Social')} />
-            <QuickTile icon="headset-outline" label="Helpdesk" color={colors.blue}
-              onPress={() => navigation.navigate('Helpdesk')} />
-            <QuickTile icon="document-text-outline" label="Profile" color={colors.primary}
-              onPress={() => navigation.navigate('Profile', { id: user.id })} />
-            {user?.role === 'admin' ? (
-              <QuickTile icon="people-circle" label="Employees" color={colors.navy}
-                onPress={() => navigation.navigate('AdminUsers')} />
-            ) : null}
-            <QuickTile icon="shield-checkmark" label="Permissions" color={colors.primary}
-              onPress={() => navigation.navigate('Permissions')} />
+        {/* Quick Actions */}
+        <View style={styles.card}>
+          <View style={styles.cardHead}><Text style={styles.cardTitle}>Quick Actions</Text><TouchableOpacity><Text style={styles.viewReport}>Customize</Text></TouchableOpacity></View>
+          <View style={styles.quickGrid}>
+            {[
+              { icon: 'person-add', label: 'Add Employee', color: colors.primary },
+              { icon: 'finger-print', label: 'Mark Attendance', color: colors.green },
+              { icon: 'airplane', label: 'Apply Leave', color: colors.orange },
+              { icon: 'document-text', label: 'View Payslip', color: colors.blue },
+              { icon: 'star', label: 'Performance Review', color: colors.pink },
+            ].map((q,i)=>(
+              <TouchableOpacity key={i} style={styles.quickTile} onPress={()=>{ if(q.label.includes('Attendance')) punch.openPunch({today}); else if(q.label.includes('Leave')) navigation.navigate('NewLeave'); }}>
+                <View style={[styles.quickIcon, { backgroundColor: q.color+'18', borderColor: q.color+'30' }]}><Ionicons name={q.icon} size={18} color={q.color} /></View>
+                <Text style={styles.quickLabel}>{q.label}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
-
-          {events.length > 0 ? (
-            <>
-              <SectionTitle right={<TouchableOpacity onPress={() => navigation.navigate('Social')}><Text style={styles.link}>View all</Text></TouchableOpacity>}>
-                Today
-              </SectionTitle>
-              <Card>
-                {events.map((e, i) => (
-                  <Row key={i} style={{ paddingVertical: 8, borderBottomWidth: i < events.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
-                    <View style={[styles.eventIcon, { backgroundColor: (e.type === 'birthday' ? colors.pink : colors.primary) + '18' }]}>
-                      <Ionicons name={e.type === 'birthday' ? 'gift-outline' : 'megaphone-outline'}
-                        size={18} color={e.type === 'birthday' ? colors.pink : colors.primary} />
-                    </View>
-                    <View style={{ flex: 1, marginLeft: 10 }}>
-                      <Text style={{ fontWeight: '700', color: colors.text }}>{e.title}</Text>
-                      {e.subtitle ? <Text style={{ color: colors.subtext, fontSize: 12 }}>{e.subtitle}</Text> : null}
-                    </View>
-                  </Row>
-                ))}
-              </Card>
-            </>
-          ) : null}
         </View>
-      </ScrollView>
-    </Screen>
-  );
-}
 
-function StatMini({ label, value, color, icon }) {
-  return (
-    <View style={styles.statMini}>
-      <View style={[styles.statIcon, { backgroundColor: color + '18' }]}>
-        <Ionicons name={icon} size={16} color={color} />
-      </View>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+        {/* Pending Approvals */}
+        <View style={styles.card}>
+          <View style={styles.cardHead}><Text style={styles.cardTitle}>Pending Approvals</Text><TouchableOpacity onPress={()=>navigation.navigate('Approvals')}><Text style={styles.viewReport}>View All (12)</Text></TouchableOpacity></View>
+          {[
+            { title: 'Leave Request', sub: 'Rahul Sharma • Marketing', meta: '2 Days', icon: 'airplane', color: colors.green },
+            { title: 'Overtime Request', sub: 'Priya Mehta • Product', meta: '3 Hours', icon: 'time', color: colors.purple },
+            { title: 'Expense Claim', sub: 'Amit Verma • Sales', meta: '₹ 4,250', icon: 'receipt', color: colors.orange },
+          ].map((it,i)=>(
+            <View key={i} style={styles.approvalRow}>
+              <View style={[styles.approvalIcon, { backgroundColor: it.color+'18' }]}><Ionicons name={it.icon} size={16} color={it.color} /></View>
+              <View style={{ flex: 1, marginLeft: 10 }}><Text style={styles.approvalTitle}>{it.title}</Text><Text style={styles.approvalSub}>{it.sub}</Text></View>
+              <Text style={styles.approvalMeta}>{it.meta}</Text>
+              <View style={styles.approvalActions}><Ionicons name="checkmark" size={14} color={colors.green} /><Ionicons name="close" size={14} color={colors.red} style={{ marginLeft: 8 }} /></View>
+            </View>
+          ))}
+        </View>
+
+        {/* Department Wise Headcount */}
+        <View style={styles.card}>
+          <View style={styles.cardHead}><Text style={styles.cardTitle}>Department Wise Headcount</Text><Text style={styles.viewReport}>View All</Text></View>
+          <View style={{ flexDirection: 'row', marginTop: 8 }}>
+            <View style={styles.deptDonut}><Text style={styles.deptTotal}>1,248</Text><Text style={styles.deptLabel}>Total</Text></View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              {[
+                { label: 'Engineering', val: '456 (36.5%)', color: colors.blue },
+                { label: 'Marketing', val: '236 (18.9%)', color: colors.green },
+                { label: 'Sales', val: '212 (17.0%)', color: colors.orange },
+                { label: 'HR', val: '98 (7.8%)', color: colors.purple },
+              ].map((d,i)=><View key={i} style={styles.legendRow}><View style={[styles.dot, { backgroundColor: d.color }]} /><Text style={styles.legendText}>{d.label}</Text><Text style={styles.legendVal}>{d.val}</Text></View>)}
+            </View>
+          </View>
+        </View>
+
+        <View style={{ height: 24 }} />
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    paddingTop: 52,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: 80,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-  },
-  headerTop: { flexDirection: 'row', alignItems: 'center' },
-  menuBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
-  greeting: { color: '#E0E7FF', fontSize: 14 },
-  role: { color: '#fff', fontSize: 18, fontWeight: '800', marginTop: 2 },
-  avatar: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: '#fff', fontWeight: '800', fontSize: 16 },
-  punchCard: {
-    marginTop: 18,
-    backgroundColor: 'rgba(255,255,255,0.10)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
-    borderRadius: radius.xl,
-    padding: spacing.lg,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-  },
-  punchLabel: { color: '#C7D2FE', fontSize: 12, fontWeight: '700' },
-  punchValue: { color: '#fff', fontSize: 22, fontWeight: '900', marginTop: 2 },
-  punchTime: { color: '#A5B4FC', fontSize: 12, marginTop: 4 },
-  punchBtn: { borderRadius: radius.pill, overflow: 'hidden' },
-  punchBtnGrad: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
-  punchBtnText: { color: '#fff', fontWeight: '800', marginLeft: 8 },
-  statsRow: {
-    flexDirection: 'row', marginTop: -50,
-    marginHorizontal: spacing.lg,
-    backgroundColor: '#fff',
-    borderRadius: radius.xl, padding: spacing.md,
-    shadowColor: '#0f172a', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 20, elevation: 6,
-  },
-  statMini: { flex: 1, alignItems: 'center' },
-  statIcon: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
-  statValue: { fontSize: 18, fontWeight: '900', color: colors.text },
-  statLabel: { fontSize: 10, color: colors.subtext, marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.5 },
-  banner: {
-    borderRadius: radius.xl, padding: spacing.lg,
-    flexDirection: 'row', alignItems: 'center',
-    shadowColor: '#4C1D95', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 4,
-  },
-  bannerTitle: { color: '#fff', fontWeight: '800', fontSize: 15 },
-  bannerText: { color: '#E0E7FF', fontSize: 12, marginTop: 2 },
-  bannerCta: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999 },
-  bannerCtaText: { color: colors.primary, fontWeight: '800', fontSize: 12, marginRight: 4 },
-  tilesWrap: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  link: { color: colors.primary, fontWeight: '700', fontSize: 12 },
-  eventIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  header: { backgroundColor: '#0F172A', paddingTop: 48, paddingHorizontal: 16, paddingBottom: 28 },
+  headerTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  menuBtn: { width: 38, height: 38, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
+  greet: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  subGreet: { color: '#94A3B8', fontSize: 12, marginTop: 2 },
+  headerIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
+  badge: { position: 'absolute', top: -4, right: -4, backgroundColor: '#EF4444', width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  badgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#7C3AED', alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
+  avatarText: { color: '#fff', fontWeight: '800' },
+  topStats: { flexDirection: 'row', gap: 8 },
+  statCard: { flex: 1, backgroundColor: '#1E293B', borderRadius: 16, padding: 12, borderWidth: 1, borderColor: '#334155' },
+  statIcon: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  statLabel: { color: '#94A3B8', fontSize: 10 },
+  statValue: { color: '#fff', fontSize: 18, fontWeight: '900', marginTop: 2 },
+  statSub: { color: '#64748B', fontSize: 10, marginTop: 2 },
+  card: { backgroundColor: '#1E293B', marginHorizontal: 16, marginTop: 12, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#334155' },
+  cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  cardTitle: { color: '#fff', fontSize: 14, fontWeight: '800' },
+  viewReport: { color: '#8B5CF6', fontSize: 12, fontWeight: '700' },
+  donutWrap: { width: 72, height: 72, alignItems: 'center', justifyContent: 'center' },
+  donut: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#0F172A', alignItems: 'center', justifyContent: 'center' },
+  donutRing: { position: 'absolute', width: 72, height: 72, borderRadius: 36, borderWidth: 6 },
+  donutPct: { color: '#fff', fontSize: 14, fontWeight: '900' },
+  donutLabel: { color: '#94A3B8', fontSize: 10 },
+  legendRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  legendText: { color: '#94A3B8', fontSize: 11, marginLeft: 6, flex: 1 },
+  legendVal: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  xLabels: { color: '#64748B', fontSize: 10, textAlign: 'center', marginTop: 8 },
+  punchRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12, backgroundColor: '#0F172A', borderRadius: 12, padding: 12 },
+  punchLabel: { color: '#94A3B8', fontSize: 12 },
+  punchTime: { color: '#fff', fontSize: 14, fontWeight: '800', marginTop: 2 },
+  punchBtn: { borderRadius: 999, overflow: 'hidden' },
+  punchGrad: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, gap: 6 },
+  punchBtnText: { color: '#fff', fontWeight: '800', marginLeft: 6 },
+  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 },
+  quickTile: { width: '18%', alignItems: 'center' },
+  quickIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  quickLabel: { color: '#94A3B8', fontSize: 9, textAlign: 'center', marginTop: 6 },
+  approvalRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#334155' },
+  approvalIcon: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  approvalTitle: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  approvalSub: { color: '#94A3B8', fontSize: 11 },
+  approvalMeta: { color: '#fff', fontSize: 11, fontWeight: '700', marginRight: 8 },
+  approvalActions: { flexDirection: 'row' },
+  deptDonut: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#0F172A', alignItems: 'center', justifyContent: 'center', borderWidth: 6, borderColor: '#334155' },
+  deptTotal: { color: '#fff', fontSize: 14, fontWeight: '900' },
+  deptLabel: { color: '#94A3B8', fontSize: 10 },
 });
