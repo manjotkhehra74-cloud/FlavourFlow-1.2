@@ -227,8 +227,8 @@ function MoreScreen({ navigation }) {
           onPress={() => {
             const target = it.to.screen || it.to;
             const params = it.to.params;
-            // MoreScreen is inside Tab -> Drawer, so navigate via Drawer parent
-            const drawerNav = navigation.getParent()?.getParent();
+            // MoreScreen is inside Tabs -> Drawer, so use parent (Tabs) to navigate to Drawer screens
+            const drawerNav = navigation.getParent();
             if (drawerNav) {
               drawerNav.navigate(target, params);
             } else {
