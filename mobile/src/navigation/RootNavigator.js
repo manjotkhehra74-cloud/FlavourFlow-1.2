@@ -31,6 +31,9 @@ import NewTicketScreen from '../screens/NewTicketScreen';
 import PermissionsScreen from '../screens/PermissionsScreen';
 import AdminUsersScreen from '../screens/AdminUsersScreen';
 import AttendanceAdminScreen from '../screens/erp/AttendanceAdminScreen';
+import ShiftRosterScreen from '../screens/erp/ShiftRosterScreen';
+import OvertimeScreen from '../screens/erp/OvertimeScreen';
+import RecruitmentScreen from '../screens/erp/RecruitmentScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -150,9 +153,9 @@ function MoreScreen({ navigation }) {
     { icon: 'calendar-outline', label: 'Attendance', to: 'Attendance' },
     { icon: 'shield-checkmark-outline', label: 'Attendance Admin', to: 'AttendanceAdmin', show: user?.role !== 'employee' },
     { icon: 'time-outline', label: 'Leave Management', to: 'Leaves' },
-    { icon: 'calendar-outline', label: 'Shift & Roster', to: 'AttendanceAdmin' },
-    { icon: 'timer-outline', label: 'Overtime', to: 'AttendanceAdmin' },
-    { icon: 'briefcase-outline', label: 'Recruitment (ATS)', to: 'AttendanceAdmin' },
+    { icon: 'calendar-outline', label: 'Shift & Roster', to: 'ShiftRoster' },
+    { icon: 'timer-outline', label: 'Overtime', to: 'Overtime' },
+    { icon: 'briefcase-outline', label: 'Recruitment (ATS)', to: 'Recruitment' },
     { icon: 'school-outline', label: 'Training (LMS)', to: 'AttendanceAdmin' },
     { icon: 'trending-up-outline', label: 'Performance (KRA/KPI)', to: 'AttendanceAdmin' },
     { icon: 'document-outline', label: 'Employee Documents', to: 'AttendanceAdmin' },
@@ -214,9 +217,9 @@ function CustomDrawerContent(props) {
     { icon: 'people-outline', label: 'Employees', screen: 'Team', show: user?.role !== 'employee' },
     { icon: 'time-outline', label: 'Attendance', screen: 'Attendance' },
     { icon: 'shield-checkmark-outline', label: 'Attendance Admin', screen: 'AttendanceAdmin', show: user?.role !== 'employee' },
-    { icon: 'calendar-outline', label: 'Shift & Roster', screen: 'AttendanceAdmin' },
-    { icon: 'timer-outline', label: 'Overtime', screen: 'AttendanceAdmin' },
-    { icon: 'briefcase-outline', label: 'Recruitment', screen: 'AttendanceAdmin' },
+    { icon: 'calendar-outline', label: 'Shift & Roster', screen: 'ShiftRoster' },
+    { icon: 'timer-outline', label: 'Overtime', screen: 'Overtime' },
+    { icon: 'briefcase-outline', label: 'Recruitment', screen: 'Recruitment' },
     { icon: 'school-outline', label: 'Training', screen: 'AttendanceAdmin' },
     { icon: 'trending-up-outline', label: 'Performance', screen: 'AttendanceAdmin' },
     { icon: 'document-outline', label: 'Documents', screen: 'AttendanceAdmin' },
@@ -297,6 +300,9 @@ function DrawerNav() {
       <Drawer.Screen name="Team" component={TeamScreen} options={{ drawerLabel: 'Employees' }} />
       <Drawer.Screen name="Attendance" component={AttendanceScreen} />
       <Drawer.Screen name="AttendanceAdmin" component={AttendanceAdminScreen} options={{ title: 'Attendance Admin' }} />
+      <Drawer.Screen name="ShiftRoster" component={ShiftRosterScreen} options={{ title: 'Shift & Roster' }} />
+      <Drawer.Screen name="Overtime" component={OvertimeScreen} options={{ title: 'Overtime' }} />
+      <Drawer.Screen name="Recruitment" component={RecruitmentScreen} options={{ title: 'Recruitment' }} />
       <Drawer.Screen name="Leaves" component={LeavesScreen} options={{ title: 'Leave Management' }} />
       <Drawer.Screen name="Helpdesk" component={HelpdeskScreen} />
       <Drawer.Screen name="Approvals" component={ApprovalsScreen} />
