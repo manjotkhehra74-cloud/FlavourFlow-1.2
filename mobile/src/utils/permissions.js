@@ -7,12 +7,13 @@ import { Platform, Alert } from 'react-native';
 
 // Lazily require native modules — if an APK was built without them, importing
 // at the top of the file would crash the whole app on launch.
-let LocalAuthentication, Notifications, Haptics, IntentLauncher, Location;
+let LocalAuthentication, Notifications, Haptics, IntentLauncher, Location, SecureStore;
 try { Location = require('expo-location'); } catch {}
 try { LocalAuthentication = require('expo-local-authentication'); } catch {}
 try { Notifications = require('expo-notifications'); } catch {}
 try { Haptics = require('expo-haptics'); } catch {}
 try { IntentLauncher = require('expo-intent-launcher'); } catch {}
+try { SecureStore = require('expo-secure-store'); } catch {}
 
 if (Notifications?.setNotificationHandler) {
   try {
@@ -65,32 +66,83 @@ export async function openLocationSettings() {
 }
 
 export async function getBiometricSupport() {
+  if (Platform.OS === 'web') return null;
   if (!LocalAuthentication) return null;
   try {
     const has = await LocalAuthentication.hasHardwareAsync();
+    if (!has) return null;
     const enrolled = await LocalAuthentication.isEnrolledAsync();
-    if (!has || !enrolled) return null;
+    if (!enrolled) return 'Enroll needed';
     const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
-    if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) return 'Face unlock';
+    if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) return 'Face ID';
+    if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT) || types.includes(1)) return 'Fingerprint';
     if (types.includes(LocalAuthentication.AuthenticationType.IRIS)) return 'Iris';
-    return 'Fingerprint';
+    return 'Biometrics';
   } catch {
     return null;
   }
 }
 
 export async function authenticateBiometric(promptMessage) {
+  if (Platform.OS === 'web') return false;
   if (!LocalAuthentication) return false;
   try {
+    const has = await LocalAuthentication.hasHardwareAsync();
+    const enrolled = await LocalAuthentication.isEnrolledAsync();
+    if (!has || !enrolled) return false;
     const result = await LocalAuthentication.authenticateAsync({
-      promptMessage,
+      promptMessage: promptMessage || 'Authenticate',
       fallbackLabel: 'Use passcode',
+      cancelLabel: 'Cancel',
       disableDeviceFallback: false,
     });
-    return result.success;
-  } catch {
+    if (result.success) return true;
+    return false;
+  } catch (e) {
+    console.log('authenticateBiometric error', e);
     return false;
   }
+}
+
+// SecureStore helpers for biometric login
+const BIO_EMAIL_KEY = 'biometric_email';
+const BIO_PASS_KEY = 'biometric_pass';
+const BIO_ENABLED_KEY = 'biometric_enabled';
+
+export async function saveBiometricCredentials(email, password) {
+  if (!SecureStore) return false;
+  try {
+    await SecureStore.setItemAsync(BIO_EMAIL_KEY, email);
+    await SecureStore.setItemAsync(BIO_PASS_KEY, password);
+    await SecureStore.setItemAsync(BIO_ENABLED_KEY, '1');
+    return true;
+  } catch { return false; }
+}
+export async function getBiometricCredentials() {
+  if (!SecureStore) return null;
+  try {
+    const email = await SecureStore.getItemAsync(BIO_EMAIL_KEY);
+    const pass = await SecureStore.getItemAsync(BIO_PASS_KEY);
+    const enabled = await SecureStore.getItemAsync(BIO_ENABLED_KEY);
+    if (email && pass && enabled === '1') return { email, password: pass };
+    return null;
+  } catch { return null; }
+}
+export async function hasBiometricCredentials() {
+  const c = await getBiometricCredentials();
+  return !!c;
+}
+export async function clearBiometricCredentials() {
+  if (!SecureStore) return;
+  try {
+    await SecureStore.deleteItemAsync(BIO_EMAIL_KEY);
+    await SecureStore.deleteItemAsync(BIO_PASS_KEY);
+    await SecureStore.deleteItemAsync(BIO_ENABLED_KEY);
+  } catch {}
+}
+export async function isBiometricEnabled() {
+  if (!SecureStore) return false;
+  try { return (await SecureStore.getItemAsync(BIO_ENABLED_KEY)) === '1'; } catch { return false; }
 }
 
 export async function ensureNotificationPermission() {

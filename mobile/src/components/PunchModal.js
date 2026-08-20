@@ -37,6 +37,7 @@ export default function PunchModal({ visible, onClose, onPunched, today }) {
         const [r, label] = await Promise.all([Api.lateReasons(), getBiometricSupport()]);
         setReasons(r.reasons || []);
         setBiometricLabel(label);
+        if (label && label !== 'Enroll needed') setUseBiometric(true);
       } catch {}
     })();
   }, [visible]);
@@ -64,12 +65,15 @@ export default function PunchModal({ visible, onClose, onPunched, today }) {
         return;
       }
       let biometricOk = true;
-      if (useBiometric && biometricLabel) {
-        biometricOk = await authenticateBiometric('Punch attendance with ' + biometricLabel);
-        if (!biometricOk) {
-          Alert.alert('Biometric failed', 'Fingerprint / face did not match. Please try again.');
-          setStep('idle');
-          return;
+      const needBiometric = biometricLabel && biometricLabel !== 'Enroll needed';
+      if (needBiometric) {
+        if (useBiometric) {
+          biometricOk = await authenticateBiometric('Punch attendance with ' + biometricLabel);
+          if (!biometricOk) {
+            Alert.alert('Biometric failed', 'Fingerprint / face did not match or was cancelled. Please try again. Make sure fingerprint/face is enrolled in device settings.');
+            setStep('idle');
+            return;
+          }
         }
       }
       await submitPunch(loc);
@@ -150,16 +154,29 @@ export default function PunchModal({ visible, onClose, onPunched, today }) {
                 </View>
 
                 {biometricLabel ? (
-                  <TouchableOpacity
-                    style={[styles.option, useBiometric && styles.optionOn]}
-                    onPress={() => setUseBiometric((v) => !v)}
-                  >
-                    <Ionicons name={useBiometric ? 'checkbox' : 'square-outline'} size={22} color={colors.primary} />
-                    <View style={{ flex: 1, marginLeft: 10 }}>
-                      <Text style={styles.optionTitle}>Use {biometricLabel}</Text>
-                      <Text style={styles.optionSub}>Verify fingerprint / face before punching</Text>
+                  biometricLabel === 'Enroll needed' ? (
+                    <View style={[styles.option, { borderColor: colors.orange, backgroundColor: colors.orange + '10' }]}>
+                      <Ionicons name="alert-circle-outline" size={22} color={colors.orange} />
+                      <View style={{ flex: 1, marginLeft: 10 }}>
+                        <Text style={styles.optionTitle}>Biometric not enrolled</Text>
+                        <Text style={styles.optionSub}>Please enable fingerprint/face in device settings. Punch will work without it for now.</Text>
+                      </View>
                     </View>
-                  </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={[styles.option, useBiometric && styles.optionOn]}
+                      onPress={() => setUseBiometric((v) => !v)}
+                    >
+                      <View style={[styles.bioIcon, { backgroundColor: useBiometric ? colors.primary : colors.border }]}>
+                        <Ionicons name={useBiometric ? 'finger-print' : 'finger-print-outline'} size={18} color={useBiometric ? '#fff' : colors.subtext} />
+                      </View>
+                      <View style={{ flex: 1, marginLeft: 10 }}>
+                        <Text style={styles.optionTitle}>{useBiometric ? `✓ ${biometricLabel} enabled` : `Enable ${biometricLabel}`}</Text>
+                        <Text style={styles.optionSub}>{useBiometric ? 'Attendance will be verified with biometrics' : 'Tap to verify fingerprint / face before punching'}</Text>
+                      </View>
+                      <Ionicons name={useBiometric ? 'checkbox' : 'square-outline'} size={20} color={useBiometric ? colors.primary : colors.subtext} />
+                    </TouchableOpacity>
+                  )
                 ) : null}
 
                 <TouchableOpacity style={styles.option} onPress={openLocationSettings}>
@@ -296,6 +313,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16, marginTop: 10, backgroundColor: '#fff',
   },
   optionOn: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  bioIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   optionTitle: { fontWeight: '700', color: colors.text },
   optionSub: { color: colors.subtext, fontSize: 12, marginTop: 2 },
   warnBox: { flexDirection: 'row', padding: 12, backgroundColor: colors.redSoft, borderRadius: 12, margin: 16 },

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert,
 } from 'react-native';
@@ -7,24 +7,51 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing } from '../theme';
 import { Input, Button, PulseMark } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
+import { getBiometricSupport, hasBiometricCredentials, saveBiometricCredentials } from '../utils/permissions';
 
 export default function LoginScreen() {
-  const { login } = useAuth();
+  const { login, loginWithBiometrics } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [bioType, setBioType] = useState(null);
+  const [hasBioCreds, setHasBioCreds] = useState(false);
+  const [bioLoading, setBioLoading] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const t = await getBiometricSupport();
+      setBioType(t);
+      const has = await hasBiometricCredentials();
+      setHasBioCreds(has);
+    })();
+  }, []);
 
   const onLogin = async () => {
     if (!email || !password) return Alert.alert('Missing', 'Please enter email and password.');
     setLoading(true);
     try {
       await login(email.trim().toLowerCase(), password);
+      if (bioType && bioType !== 'Enroll needed') {
+        await saveBiometricCredentials(email.trim().toLowerCase(), password);
+      }
     } catch (e) {
       Alert.alert('Login failed', e.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const onBiometricLogin = async () => {
+    setBioLoading(true);
+    try {
+      await loginWithBiometrics();
+    } catch (e) {
+      Alert.alert('Biometric login failed', e.message);
+    } finally {
+      setBioLoading(false);
     }
   };
 
@@ -40,7 +67,6 @@ export default function LoginScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-            {/* Hero */}
             <View style={styles.hero}>
               <LinearGradient
                 colors={['#7C3AED', '#4F46E5']}
@@ -52,7 +78,6 @@ export default function LoginScreen() {
               <Text style={styles.tagline}>People. Purpose. Performance.</Text>
             </View>
 
-            {/* Form card */}
             <View style={styles.card}>
               <Text style={styles.welcome}>Welcome Back! 👋</Text>
               <Text style={styles.subWelcome}>Login to continue</Text>
@@ -99,6 +124,29 @@ export default function LoginScreen() {
                 loading={loading}
                 style={{ marginTop: spacing.md }}
               />
+
+              {bioType && bioType !== 'Enroll needed' ? (
+                <TouchableOpacity
+                  onPress={onBiometricLogin}
+                  disabled={bioLoading}
+                  style={[styles.bioBtn, hasBioCreds ? styles.bioBtnActive : styles.bioBtnInactive]}
+                >
+                  <LinearGradient
+                    colors={hasBioCreds ? ['#7C3AED', '#4F46E5'] : ['#E5E7EB', '#E5E7EB']}
+                    style={styles.bioGrad}
+                  >
+                    <Ionicons name={bioType === 'Face ID' ? 'scan-outline' : 'finger-print-outline'} size={22} color={hasBioCreds ? '#fff' : colors.subtext} />
+                    <Text style={[styles.bioText, { color: hasBioCreds ? '#fff' : colors.subtext }]}>
+                      {bioLoading ? 'Verifying...' : hasBioCreds ? `Login with ${bioType}` : `Enable ${bioType} (login once)`}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              ) : bioType === 'Enroll needed' ? (
+                <View style={styles.bioHint}>
+                  <Ionicons name="information-circle-outline" size={16} color={colors.orange} />
+                  <Text style={styles.bioHintText}>Biometric not enrolled — enable fingerprint/face in device settings to use quick login & punch.</Text>
+                </View>
+              ) : null}
 
               <Text style={styles.or}>or continue with</Text>
 
@@ -169,4 +217,11 @@ const styles = StyleSheet.create({
     marginTop: 14, padding: 10, backgroundColor: colors.primarySoft, borderRadius: 12,
   },
   demoText: { color: colors.primary, fontWeight: '700', fontSize: 12 },
+  bioBtn: { marginTop: 14, borderRadius: 14, overflow: 'hidden' },
+  bioBtnActive: { opacity: 1 },
+  bioBtnInactive: { opacity: 0.95 },
+  bioGrad: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, paddingHorizontal: 16, gap: 10 },
+  bioText: { fontWeight: '800', fontSize: 14, marginLeft: 8 },
+  bioHint: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: colors.orange + '14', borderRadius: 12, padding: 12, marginTop: 14, gap: 8 },
+  bioHintText: { flex: 1, color: colors.textLight, fontSize: 12, lineHeight: 16 },
 });
