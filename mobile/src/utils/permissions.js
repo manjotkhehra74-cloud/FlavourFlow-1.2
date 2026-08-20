@@ -40,7 +40,16 @@ export async function getCurrentLocation() {
   try {
     const granted = await ensureLocationPermission();
     if (!granted) return null;
-    const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+    // Speed optimization: try last known position first (instant), fallback to current with low accuracy & timeout
+    try {
+      const last = await Location.getLastKnownPositionAsync({ maxAge: 60000 });
+      if (last && last.coords) {
+        return { latitude: last.coords.latitude, longitude: last.coords.longitude, accuracy: last.coords.accuracy, cached: true };
+      }
+    } catch {}
+    const pos = await Location.getCurrentPositionAsync({ 
+      accuracy: Location.Accuracy.Low,
+    });
     return { latitude: pos.coords.latitude, longitude: pos.coords.longitude, accuracy: pos.coords.accuracy };
   } catch {
     return null;

@@ -52,8 +52,6 @@ export default function PunchModal({ visible, onClose, onPunched, today }) {
     if (step === 'submitting' || step === 'confirming') return;
     setStep('confirming');
     try {
-      const loc = await getCurrentLocation();
-      setLocation(loc);
       if (isLate && !showLateFlow) {
         setShowLateFlow(true);
         setStep('idle');
@@ -64,17 +62,16 @@ export default function PunchModal({ visible, onClose, onPunched, today }) {
         setStep('idle');
         return;
       }
-      let biometricOk = true;
-      const needBiometric = biometricLabel && biometricLabel !== 'Enroll needed';
-      if (needBiometric) {
-        if (useBiometric) {
-          biometricOk = await authenticateBiometric('Punch attendance with ' + biometricLabel);
-          if (!biometricOk) {
-            Alert.alert('Biometric failed', 'Fingerprint / face did not match or was cancelled. Please try again. Make sure fingerprint/face is enrolled in device settings.');
-            setStep('idle');
-            return;
-          }
-        }
+      // Speed fix: run location + biometric in parallel (was sequential 4-5 sec)
+      const needBiometric = biometricLabel && biometricLabel !== 'Enroll needed' && useBiometric;
+      const locPromise = getCurrentLocation();
+      const bioPromise = needBiometric ? authenticateBiometric('Punch attendance with ' + biometricLabel) : Promise.resolve(true);
+      const [loc, biometricOk] = await Promise.all([locPromise, bioPromise]);
+      setLocation(loc);
+      if (needBiometric && !biometricOk) {
+        Alert.alert('Biometric failed', 'Fingerprint / face did not match or was cancelled. Please try again. Make sure fingerprint/face is enrolled in device settings.');
+        setStep('idle');
+        return;
       }
       await submitPunch(loc);
     } catch (e) {
