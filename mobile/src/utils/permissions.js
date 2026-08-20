@@ -7,13 +7,13 @@ import { Platform, Alert } from 'react-native';
 
 // Lazily require native modules — if an APK was built without them, importing
 // at the top of the file would crash the whole app on launch.
-let LocalAuthentication, Notifications, Haptics, IntentLauncher, Location, SecureStore;
+let LocalAuthentication, Notifications, Haptics, IntentLauncher, Location, AsyncStorage;
 try { Location = require('expo-location'); } catch {}
 try { LocalAuthentication = require('expo-local-authentication'); } catch {}
 try { Notifications = require('expo-notifications'); } catch {}
 try { Haptics = require('expo-haptics'); } catch {}
 try { IntentLauncher = require('expo-intent-launcher'); } catch {}
-try { SecureStore = require('expo-secure-store'); } catch {}
+try { AsyncStorage = require('@react-native-async-storage/async-storage').default; } catch { try { AsyncStorage = require('@react-native-async-storage/async-storage'); } catch {} }
 
 if (Notifications?.setNotificationHandler) {
   try {
@@ -104,26 +104,26 @@ export async function authenticateBiometric(promptMessage) {
   }
 }
 
-// SecureStore helpers for biometric login
+// AsyncStorage helpers for biometric login (replaces SecureStore to avoid native build issue on SDK 51)
 const BIO_EMAIL_KEY = 'biometric_email';
 const BIO_PASS_KEY = 'biometric_pass';
 const BIO_ENABLED_KEY = 'biometric_enabled';
 
 export async function saveBiometricCredentials(email, password) {
-  if (!SecureStore) return false;
+  if (!AsyncStorage) return false;
   try {
-    await SecureStore.setItemAsync(BIO_EMAIL_KEY, email);
-    await SecureStore.setItemAsync(BIO_PASS_KEY, password);
-    await SecureStore.setItemAsync(BIO_ENABLED_KEY, '1');
+    await AsyncStorage.setItem(BIO_EMAIL_KEY, email);
+    await AsyncStorage.setItem(BIO_PASS_KEY, password);
+    await AsyncStorage.setItem(BIO_ENABLED_KEY, '1');
     return true;
   } catch { return false; }
 }
 export async function getBiometricCredentials() {
-  if (!SecureStore) return null;
+  if (!AsyncStorage) return null;
   try {
-    const email = await SecureStore.getItemAsync(BIO_EMAIL_KEY);
-    const pass = await SecureStore.getItemAsync(BIO_PASS_KEY);
-    const enabled = await SecureStore.getItemAsync(BIO_ENABLED_KEY);
+    const email = await AsyncStorage.getItem(BIO_EMAIL_KEY);
+    const pass = await AsyncStorage.getItem(BIO_PASS_KEY);
+    const enabled = await AsyncStorage.getItem(BIO_ENABLED_KEY);
     if (email && pass && enabled === '1') return { email, password: pass };
     return null;
   } catch { return null; }
@@ -133,16 +133,16 @@ export async function hasBiometricCredentials() {
   return !!c;
 }
 export async function clearBiometricCredentials() {
-  if (!SecureStore) return;
+  if (!AsyncStorage) return;
   try {
-    await SecureStore.deleteItemAsync(BIO_EMAIL_KEY);
-    await SecureStore.deleteItemAsync(BIO_PASS_KEY);
-    await SecureStore.deleteItemAsync(BIO_ENABLED_KEY);
+    await AsyncStorage.removeItem(BIO_EMAIL_KEY);
+    await AsyncStorage.removeItem(BIO_PASS_KEY);
+    await AsyncStorage.removeItem(BIO_ENABLED_KEY);
   } catch {}
 }
 export async function isBiometricEnabled() {
-  if (!SecureStore) return false;
-  try { return (await SecureStore.getItemAsync(BIO_ENABLED_KEY)) === '1'; } catch { return false; }
+  if (!AsyncStorage) return false;
+  try { return (await AsyncStorage.getItem(BIO_ENABLED_KEY)) === '1'; } catch { return false; }
 }
 
 export async function ensureNotificationPermission() {
