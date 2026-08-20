@@ -164,6 +164,11 @@ function MainTabs() {
 
 function MoreScreen({ navigation }) {
   const { user, logout } = useContext(AuthContext);
+  const { isDark, colors: themeColors, mode, setTheme } = require('../context/ThemeContext').useTheme();
+  const bg = themeColors.bg;
+  const cardBg = themeColors.card;
+  const textColor = themeColors.text;
+  const borderColor = themeColors.border;
   const items = [
     { icon: 'person-outline', label: 'My Profile', to: { screen: 'Profile', params: { id: user?.id } } },
     { icon: 'calendar-outline', label: 'Attendance', to: 'Attendance' },
@@ -178,55 +183,63 @@ function MoreScreen({ navigation }) {
     { icon: 'wallet-outline', label: 'Payroll Admin', to: 'Payroll' },
     { icon: 'cash-outline', label: 'Loans & Advances', to: 'Loans' },
     { icon: 'heart-outline', label: 'Benefits & Insurance', to: 'Benefits' },
-    { icon: 'people-outline', label: 'Onboarding', to: 'Team' },
-    { icon: 'book-outline', label: 'HR Policies', to: 'Helpdesk' },
-    { icon: 'bar-chart-outline', label: 'Reports & Analytics', to: 'AttendanceAdmin' },
-    { icon: 'calendar-outline', label: 'Calendar & Events', to: 'AttendanceAdmin' },
-    { icon: 'headset-outline', label: 'Helpdesk', to: 'Helpdesk' },
-    { icon: 'checkmark-done-outline', label: 'Approvals', to: 'Approvals', show: user?.role !== 'employee' },
-    { icon: 'people-circle-outline', label: 'Manage Employees', to: 'AdminUsers', show: user?.role === 'admin' },
-    { icon: 'shield-checkmark-outline', label: 'Permissions', to: 'Permissions' },
-    { icon: 'cube-outline', label: 'Assets', to: 'Assets' },
-    { icon: 'receipt-outline', label: 'Expenses', to: 'Expenses' },
-    { icon: 'calendar-outline', label: 'Calendar & Events', to: 'Calendar' },
-    { icon: 'bar-chart-outline', label: 'Reports & Analytics', to: 'Reports' },
     { icon: 'people-outline', label: 'Onboarding', to: 'Onboarding' },
     { icon: 'book-outline', label: 'HR Policies', to: 'HRPolicies' },
     { icon: 'people-circle-outline', label: 'Company Directory', to: 'CompanyDirectory' },
     { icon: 'notifications-outline', label: 'Notifications', to: 'Notifications' },
     { icon: 'git-compare-outline', label: 'Employee Lifecycle', to: 'EmployeeLifecycle' },
     { icon: 'headset-outline', label: 'Helpdesk Detail', to: 'HelpdeskDetail' },
+    { icon: 'checkmark-done-outline', label: 'Approvals', to: 'Approvals', show: user?.role !== 'employee' },
+    { icon: 'people-circle-outline', label: 'Manage Employees', to: 'AdminUsers', show: user?.role === 'admin' },
+    { icon: 'shield-checkmark-outline', label: 'Permissions', to: 'Permissions' },
+    { icon: 'cube-outline', label: 'Assets', to: 'Assets' },
+    { icon: 'receipt-outline', label: 'Expenses', to: 'Expenses' },
+    { icon: 'calendar-outline', label: 'Calendar & Events', to: 'Calendar' },
+    { icon: 'bar-chart-outline', label: 'Reports & Analytics', to: 'Reports' }
   ];
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
-      <View style={styles.moreHead}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: bg }} edges={['top']}>
+      <View style={[styles.moreHead, { backgroundColor: bg }]}>
         <TouchableOpacity
-          style={styles.menuBtn}
+          style={[styles.menuBtn, { backgroundColor: cardBg, borderWidth: 1, borderColor }]}
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         >
-          <Ionicons name="menu" size={22} color={colors.navy} />
+          <Ionicons name="menu" size={22} color={textColor} />
         </TouchableOpacity>
-        <Text style={styles.moreTitle}>More</Text>
+        <Text style={[styles.moreTitle, { color: textColor }]}>More</Text>
+        <View style={{ flex: 1 }} />
+        <TouchableOpacity
+          style={[styles.themeToggle, { backgroundColor: cardBg, borderColor }]}
+          onPress={() => {
+            const next = mode === 'dark' ? 'light' : mode === 'light' ? 'system' : 'dark';
+            setTheme(next);
+          }}
+        >
+          <Ionicons name={isDark ? 'moon' : mode==='system' ? 'phone-portrait' : 'sunny'} size={16} color={textColor} />
+          <Text style={[styles.themeToggleText, { color: textColor }]}>{mode==='system'?'Auto': isDark?'Dark':'Light'}</Text>
+        </TouchableOpacity>
       </View>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
       {items.filter((i) => i.show !== false).map((it, i) => (
         <TouchableOpacity
           key={i}
-          style={styles.moreRow}
+          style={[styles.moreRow, { backgroundColor: cardBg, borderColor }]}
           onPress={() => navigation.navigate(it.to.screen || it.to, it.to.params)}
         >
           <View style={styles.moreIconWrap}>
             <Ionicons name={it.icon} size={20} color={colors.primary} />
           </View>
-          <Text style={styles.moreLabel}>{it.label}</Text>
+          <Text style={[styles.moreLabel, { color: textColor }]}>{it.label}</Text>
           <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
         </TouchableOpacity>
       ))}
-      <TouchableOpacity style={[styles.moreRow, { marginTop: 16 }]} onPress={logout}>
+      <TouchableOpacity style={[styles.moreRow, { marginTop: 16, backgroundColor: cardBg, borderColor }]} onPress={logout}>
         <View style={[styles.moreIconWrap, { backgroundColor: colors.redSoft }]}>
           <Ionicons name="log-out-outline" size={20} color={colors.red} />
         </View>
         <Text style={[styles.moreLabel, { color: colors.red }]}>Logout</Text>
       </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -433,9 +446,11 @@ const styles = StyleSheet.create({
   moreHead: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 },
   menuBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', marginRight: 10 },
   moreTitle: { fontSize: 28, fontWeight: '900', color: colors.text },
+  themeToggle: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, borderWidth: 1, gap: 6 },
+  themeToggleText: { fontSize: 12, fontWeight: '700' },
   moreRow: {
     flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 20,
-    backgroundColor: '#fff', marginHorizontal: 16, marginVertical: 4, borderRadius: 16,
+    backgroundColor: '#fff', marginHorizontal: 16, marginVertical: 4, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0',
   },
   moreIconWrap: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
   moreLabel: { flex: 1, marginLeft: 12, fontSize: 15, fontWeight: '700', color: colors.text },
