@@ -30,6 +30,7 @@ import NewPostScreen from '../screens/NewPostScreen';
 import NewTicketScreen from '../screens/NewTicketScreen';
 import PermissionsScreen from '../screens/PermissionsScreen';
 import AdminUsersScreen from '../screens/AdminUsersScreen';
+import AttendanceAdminScreen from '../screens/erp/AttendanceAdminScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -147,11 +148,27 @@ function MoreScreen({ navigation }) {
   const items = [
     { icon: 'person-outline', label: 'My Profile', to: { screen: 'Profile', params: { id: user?.id } } },
     { icon: 'calendar-outline', label: 'Attendance', to: 'Attendance' },
+    { icon: 'shield-checkmark-outline', label: 'Attendance Admin', to: 'AttendanceAdmin', show: user?.role !== 'employee' },
     { icon: 'time-outline', label: 'Leave Management', to: 'Leaves' },
+    { icon: 'calendar-outline', label: 'Shift & Roster', to: 'AttendanceAdmin' },
+    { icon: 'timer-outline', label: 'Overtime', to: 'AttendanceAdmin' },
+    { icon: 'briefcase-outline', label: 'Recruitment (ATS)', to: 'AttendanceAdmin' },
+    { icon: 'school-outline', label: 'Training (LMS)', to: 'AttendanceAdmin' },
+    { icon: 'trending-up-outline', label: 'Performance (KRA/KPI)', to: 'AttendanceAdmin' },
+    { icon: 'document-outline', label: 'Employee Documents', to: 'AttendanceAdmin' },
+    { icon: 'cash-outline', label: 'Loans & Advances', to: 'AttendanceAdmin' },
+    { icon: 'heart-outline', label: 'Benefits & Insurance', to: 'AttendanceAdmin' },
+    { icon: 'wallet-outline', label: 'Payroll Admin', to: 'AttendanceAdmin' },
+    { icon: 'people-outline', label: 'Onboarding', to: 'Team' },
+    { icon: 'book-outline', label: 'HR Policies', to: 'Helpdesk' },
+    { icon: 'bar-chart-outline', label: 'Reports & Analytics', to: 'AttendanceAdmin' },
+    { icon: 'calendar-outline', label: 'Calendar & Events', to: 'AttendanceAdmin' },
     { icon: 'headset-outline', label: 'Helpdesk', to: 'Helpdesk' },
     { icon: 'checkmark-done-outline', label: 'Approvals', to: 'Approvals', show: user?.role !== 'employee' },
     { icon: 'people-circle-outline', label: 'Manage Employees', to: 'AdminUsers', show: user?.role === 'admin' },
     { icon: 'shield-checkmark-outline', label: 'Permissions', to: 'Permissions' },
+    { icon: 'cube-outline', label: 'Assets', to: 'AttendanceAdmin' },
+    { icon: 'receipt-outline', label: 'Expenses', to: 'AttendanceAdmin' },
   ];
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
@@ -196,7 +213,16 @@ function CustomDrawerContent(props) {
     { icon: 'grid-outline', label: 'Dashboard', screen: 'Tabs' },
     { icon: 'people-outline', label: 'Employees', screen: 'Team', show: user?.role !== 'employee' },
     { icon: 'time-outline', label: 'Attendance', screen: 'Attendance' },
-    { icon: 'calendar-outline', label: 'Leave Management', screen: 'Leaves' },
+    { icon: 'shield-checkmark-outline', label: 'Attendance Admin', screen: 'AttendanceAdmin', show: user?.role !== 'employee' },
+    { icon: 'calendar-outline', label: 'Shift & Roster', screen: 'AttendanceAdmin' },
+    { icon: 'timer-outline', label: 'Overtime', screen: 'AttendanceAdmin' },
+    { icon: 'briefcase-outline', label: 'Recruitment', screen: 'AttendanceAdmin' },
+    { icon: 'school-outline', label: 'Training', screen: 'AttendanceAdmin' },
+    { icon: 'trending-up-outline', label: 'Performance', screen: 'AttendanceAdmin' },
+    { icon: 'document-outline', label: 'Documents', screen: 'AttendanceAdmin' },
+    { icon: 'cash-outline', label: 'Loans', screen: 'AttendanceAdmin' },
+    { icon: 'heart-outline', label: 'Benefits', screen: 'AttendanceAdmin' },
+    { icon: 'wallet-outline', label: 'Payroll', screen: 'AttendanceAdmin' },
     { icon: 'checkmark-done-outline', label: 'Approvals', screen: 'Approvals', show: user?.role !== 'employee' },
     { icon: 'people-circle-outline', label: 'Manage Employees', screen: 'AdminUsers', show: user?.role === 'admin' },
     { icon: 'headset-outline', label: 'Helpdesk', screen: 'Helpdesk' },
@@ -270,6 +296,7 @@ function DrawerNav() {
       <Drawer.Screen name="Tabs" component={MainTabs} options={{ title: 'Pulse HR', drawerLabel: 'Dashboard' }} />
       <Drawer.Screen name="Team" component={TeamScreen} options={{ drawerLabel: 'Employees' }} />
       <Drawer.Screen name="Attendance" component={AttendanceScreen} />
+      <Drawer.Screen name="AttendanceAdmin" component={AttendanceAdminScreen} options={{ title: 'Attendance Admin' }} />
       <Drawer.Screen name="Leaves" component={LeavesScreen} options={{ title: 'Leave Management' }} />
       <Drawer.Screen name="Helpdesk" component={HelpdeskScreen} />
       <Drawer.Screen name="Approvals" component={ApprovalsScreen} />
