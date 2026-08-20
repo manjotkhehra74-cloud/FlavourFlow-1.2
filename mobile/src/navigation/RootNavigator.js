@@ -224,7 +224,17 @@ function MoreScreen({ navigation }) {
         <TouchableOpacity
           key={i}
           style={[styles.moreRow, { backgroundColor: cardBg, borderColor }]}
-          onPress={() => navigation.navigate(it.to.screen || it.to, it.to.params)}
+          onPress={() => {
+            const target = it.to.screen || it.to;
+            const params = it.to.params;
+            // MoreScreen is inside Tab -> Drawer, so navigate via Drawer parent
+            const drawerNav = navigation.getParent()?.getParent();
+            if (drawerNav) {
+              drawerNav.navigate(target, params);
+            } else {
+              navigation.navigate(target, params);
+            }
+          }}
         >
           <View style={styles.moreIconWrap}>
             <Ionicons name={it.icon} size={20} color={colors.primary} />
