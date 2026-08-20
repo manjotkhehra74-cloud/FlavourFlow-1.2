@@ -48,6 +48,8 @@ import OnboardingScreen from '../screens/erp/OnboardingScreen';
 import HRPoliciesScreen from '../screens/erp/HRPoliciesScreen';
 import CompanyDirectoryScreen from '../screens/erp/CompanyDirectoryScreen';
 import NotificationsScreen from '../screens/erp/NotificationsScreen';
+import EmployeeLifecycleScreen from '../screens/erp/EmployeeLifecycleScreen';
+import HelpdeskDetailScreen from '../screens/erp/HelpdeskDetailScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -192,6 +194,8 @@ function MoreScreen({ navigation }) {
     { icon: 'book-outline', label: 'HR Policies', to: 'HRPolicies' },
     { icon: 'people-circle-outline', label: 'Company Directory', to: 'CompanyDirectory' },
     { icon: 'notifications-outline', label: 'Notifications', to: 'Notifications' },
+    { icon: 'git-compare-outline', label: 'Employee Lifecycle', to: 'EmployeeLifecycle' },
+    { icon: 'headset-outline', label: 'Helpdesk Detail', to: 'HelpdeskDetail' },
   ];
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
@@ -345,6 +349,8 @@ function DrawerNav() {
       <Drawer.Screen name="HRPolicies" component={HRPoliciesScreen} options={{ title: 'HR Policies' }} />
       <Drawer.Screen name="CompanyDirectory" component={CompanyDirectoryScreen} options={{ title: 'Directory' }} />
       <Drawer.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notifications' }} />
+      <Drawer.Screen name="EmployeeLifecycle" component={EmployeeLifecycleScreen} options={{ title: 'Lifecycle' }} />
+      <Drawer.Screen name="HelpdeskDetail" component={HelpdeskDetailScreen} options={{ title: 'Helpdesk' }} />
       <Drawer.Screen name="Leaves" component={LeavesScreen} options={{ title: 'Leave Management' }} />
       <Drawer.Screen name="Helpdesk" component={HelpdeskScreen} />
       <Drawer.Screen name="Approvals" component={ApprovalsScreen} />
