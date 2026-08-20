@@ -34,6 +34,10 @@ import AttendanceAdminScreen from '../screens/erp/AttendanceAdminScreen';
 import ShiftRosterScreen from '../screens/erp/ShiftRosterScreen';
 import OvertimeScreen from '../screens/erp/OvertimeScreen';
 import RecruitmentScreen from '../screens/erp/RecruitmentScreen';
+import PayrollScreen from '../screens/erp/PayrollScreen';
+import TrainingScreen from '../screens/erp/TrainingScreen';
+import LoansScreen from '../screens/erp/LoansScreen';
+import BenefitsScreen from '../screens/erp/BenefitsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -156,12 +160,12 @@ function MoreScreen({ navigation }) {
     { icon: 'calendar-outline', label: 'Shift & Roster', to: 'ShiftRoster' },
     { icon: 'timer-outline', label: 'Overtime', to: 'Overtime' },
     { icon: 'briefcase-outline', label: 'Recruitment (ATS)', to: 'Recruitment' },
-    { icon: 'school-outline', label: 'Training (LMS)', to: 'AttendanceAdmin' },
+    { icon: 'school-outline', label: 'Training (LMS)', to: 'Training' },
     { icon: 'trending-up-outline', label: 'Performance (KRA/KPI)', to: 'AttendanceAdmin' },
     { icon: 'document-outline', label: 'Employee Documents', to: 'AttendanceAdmin' },
-    { icon: 'cash-outline', label: 'Loans & Advances', to: 'AttendanceAdmin' },
-    { icon: 'heart-outline', label: 'Benefits & Insurance', to: 'AttendanceAdmin' },
-    { icon: 'wallet-outline', label: 'Payroll Admin', to: 'AttendanceAdmin' },
+    { icon: 'wallet-outline', label: 'Payroll Admin', to: 'Payroll' },
+    { icon: 'cash-outline', label: 'Loans & Advances', to: 'Loans' },
+    { icon: 'heart-outline', label: 'Benefits & Insurance', to: 'Benefits' },
     { icon: 'people-outline', label: 'Onboarding', to: 'Team' },
     { icon: 'book-outline', label: 'HR Policies', to: 'Helpdesk' },
     { icon: 'bar-chart-outline', label: 'Reports & Analytics', to: 'AttendanceAdmin' },
@@ -220,12 +224,12 @@ function CustomDrawerContent(props) {
     { icon: 'calendar-outline', label: 'Shift & Roster', screen: 'ShiftRoster' },
     { icon: 'timer-outline', label: 'Overtime', screen: 'Overtime' },
     { icon: 'briefcase-outline', label: 'Recruitment', screen: 'Recruitment' },
-    { icon: 'school-outline', label: 'Training', screen: 'AttendanceAdmin' },
+    { icon: 'school-outline', label: 'Training', screen: 'Training' },
     { icon: 'trending-up-outline', label: 'Performance', screen: 'AttendanceAdmin' },
     { icon: 'document-outline', label: 'Documents', screen: 'AttendanceAdmin' },
-    { icon: 'cash-outline', label: 'Loans', screen: 'AttendanceAdmin' },
-    { icon: 'heart-outline', label: 'Benefits', screen: 'AttendanceAdmin' },
-    { icon: 'wallet-outline', label: 'Payroll', screen: 'AttendanceAdmin' },
+    { icon: 'cash-outline', label: 'Loans', screen: 'Loans' },
+    { icon: 'heart-outline', label: 'Benefits', screen: 'Benefits' },
+    { icon: 'wallet-outline', label: 'Payroll', screen: 'Payroll' },
     { icon: 'checkmark-done-outline', label: 'Approvals', screen: 'Approvals', show: user?.role !== 'employee' },
     { icon: 'people-circle-outline', label: 'Manage Employees', screen: 'AdminUsers', show: user?.role === 'admin' },
     { icon: 'headset-outline', label: 'Helpdesk', screen: 'Helpdesk' },
@@ -303,6 +307,10 @@ function DrawerNav() {
       <Drawer.Screen name="ShiftRoster" component={ShiftRosterScreen} options={{ title: 'Shift & Roster' }} />
       <Drawer.Screen name="Overtime" component={OvertimeScreen} options={{ title: 'Overtime' }} />
       <Drawer.Screen name="Recruitment" component={RecruitmentScreen} options={{ title: 'Recruitment' }} />
+      <Drawer.Screen name="Training" component={TrainingScreen} options={{ title: 'Training' }} />
+      <Drawer.Screen name="Payroll" component={PayrollScreen} options={{ title: 'Payroll' }} />
+      <Drawer.Screen name="Loans" component={LoansScreen} options={{ title: 'Loans' }} />
+      <Drawer.Screen name="Benefits" component={BenefitsScreen} options={{ title: 'Benefits' }} />
       <Drawer.Screen name="Leaves" component={LeavesScreen} options={{ title: 'Leave Management' }} />
       <Drawer.Screen name="Helpdesk" component={HelpdeskScreen} />
       <Drawer.Screen name="Approvals" component={ApprovalsScreen} />
