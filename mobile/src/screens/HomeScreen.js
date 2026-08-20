@@ -45,8 +45,8 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.greet}>Good Morning, {user?.name?.split(' ')[0] || 'Manjot'}! 👋</Text>
               <Text style={styles.subGreet}>Here's what's happening in your organization today.</Text>
             </View>
-            <TouchableOpacity style={styles.headerIcon}><Ionicons name="search" size={18} color="#fff" /></TouchableOpacity>
-            <TouchableOpacity style={styles.headerIcon}><Ionicons name="notifications-outline" size={18} color="#fff" /><View style={styles.badge}><Text style={styles.badgeText}>8</Text></View></TouchableOpacity>
+            <TouchableOpacity style={styles.headerIcon} onPress={() => navigation.navigate('CompanyDirectory')}><Ionicons name="search" size={18} color="#fff" /></TouchableOpacity>
+            <TouchableOpacity style={styles.headerIcon} onPress={() => navigation.navigate('Notifications')}><Ionicons name="notifications-outline" size={18} color="#fff" /><View style={styles.badge}><Text style={styles.badgeText}>3</Text></View></TouchableOpacity>
             <View style={styles.avatar}><Text style={styles.avatarText}>{(user?.name||'U').split(' ').map(w=>w[0]).slice(0,2).join('')}</Text></View>
           </View>
 
