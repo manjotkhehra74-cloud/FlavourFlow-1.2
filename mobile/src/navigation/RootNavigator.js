@@ -45,6 +45,9 @@ import ExpensesScreen from '../screens/erp/ExpensesScreen';
 import CalendarScreen from '../screens/erp/CalendarScreen';
 import ReportsScreen from '../screens/erp/ReportsScreen';
 import OnboardingScreen from '../screens/erp/OnboardingScreen';
+import HRPoliciesScreen from '../screens/erp/HRPoliciesScreen';
+import CompanyDirectoryScreen from '../screens/erp/CompanyDirectoryScreen';
+import NotificationsScreen from '../screens/erp/NotificationsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -186,6 +189,9 @@ function MoreScreen({ navigation }) {
     { icon: 'calendar-outline', label: 'Calendar & Events', to: 'Calendar' },
     { icon: 'bar-chart-outline', label: 'Reports & Analytics', to: 'Reports' },
     { icon: 'people-outline', label: 'Onboarding', to: 'Onboarding' },
+    { icon: 'book-outline', label: 'HR Policies', to: 'HRPolicies' },
+    { icon: 'people-circle-outline', label: 'Company Directory', to: 'CompanyDirectory' },
+    { icon: 'notifications-outline', label: 'Notifications', to: 'Notifications' },
   ];
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
@@ -244,6 +250,9 @@ function CustomDrawerContent(props) {
     { icon: 'calendar-outline', label: 'Calendar', screen: 'Calendar' },
     { icon: 'bar-chart-outline', label: 'Reports', screen: 'Reports' },
     { icon: 'people-outline', label: 'Onboarding', screen: 'Onboarding' },
+    { icon: 'book-outline', label: 'HR Policies', screen: 'HRPolicies' },
+    { icon: 'people-circle-outline', label: 'Directory', screen: 'CompanyDirectory' },
+    { icon: 'notifications-outline', label: 'Notifications', screen: 'Notifications' },
     { icon: 'wallet-outline', label: 'Payroll', screen: 'Payroll' },
     { icon: 'checkmark-done-outline', label: 'Approvals', screen: 'Approvals', show: user?.role !== 'employee' },
     { icon: 'people-circle-outline', label: 'Manage Employees', screen: 'AdminUsers', show: user?.role === 'admin' },
@@ -333,6 +342,9 @@ function DrawerNav() {
       <Drawer.Screen name="Calendar" component={CalendarScreen} options={{ title: 'Calendar' }} />
       <Drawer.Screen name="Reports" component={ReportsScreen} options={{ title: 'Reports' }} />
       <Drawer.Screen name="Onboarding" component={OnboardingScreen} options={{ title: 'Onboarding' }} />
+      <Drawer.Screen name="HRPolicies" component={HRPoliciesScreen} options={{ title: 'HR Policies' }} />
+      <Drawer.Screen name="CompanyDirectory" component={CompanyDirectoryScreen} options={{ title: 'Directory' }} />
+      <Drawer.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notifications' }} />
       <Drawer.Screen name="Leaves" component={LeavesScreen} options={{ title: 'Leave Management' }} />
       <Drawer.Screen name="Helpdesk" component={HelpdeskScreen} />
       <Drawer.Screen name="Approvals" component={ApprovalsScreen} />
