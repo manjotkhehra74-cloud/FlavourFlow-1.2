@@ -1,0 +1,17 @@
+[Unit]
+Description=HRMate API
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/hrmate/server
+EnvironmentFile=/etc/hrmate.env
+ExecStart=/usr/bin/node src/index.js
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

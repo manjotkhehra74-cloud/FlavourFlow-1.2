@@ -1,42 +1,6 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const morgan = require('morgan');
-
-const authRoutes = require('./routes/auth');
-const employeeRoutes = require('./routes/employees');
-const attendanceRoutes = require('./routes/attendance');
-const leaveRoutes = require('./routes/leaves');
-const teamRoutes = require('./routes/team');
-const socialRoutes = require('./routes/social');
-const ticketRoutes = require('./routes/tickets');
-const dashboardRoutes = require('./routes/dashboard');
-
-const app = express();
-app.use(cors());
-app.use(express.json({ limit: '2mb' }));
-app.use(morgan('dev'));
-
-app.get('/api/health', (req, res) => res.json({ ok: true, service: 'hrone-clone', time: new Date().toISOString() }));
-
-app.use('/api/auth', authRoutes);
-app.use('/api/employees', employeeRoutes);
-app.use('/api/attendance', attendanceRoutes);
-app.use('/api/leaves', leaveRoutes);
-app.use('/api/team', teamRoutes);
-app.use('/api/social', socialRoutes);
-app.use('/api/tickets', ticketRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api/meta', require('./routes/meta'));
-app.use('/api/erp', require('./routes/erp'));
-
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({ error: err.message || 'Server error' });
-});
-
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 API running on http://0.0.0.0:${PORT}`);
-});
+import 'dotenv/config'; import express from 'express'; import cors from 'cors'; import morgan from 'morgan';
+import './db/index.js'; import auth from './routes/auth.js'; import users from './routes/users.js'; import employees from './routes/employees.js'; import { NAV_ITEMS } from './rbac.js';
+const app=express(); app.use(cors({origin: process.env.CORS_ORIGIN?.split(',') || true})); app.use(express.json({limit:'2mb'})); app.use(morgan('tiny'));
+app.get('/health',(req,res)=>res.json({status:'ok',service:'hrmate-api'})); app.get('/api/v1/meta/navigation',(req,res)=>res.json(NAV_ITEMS)); app.use('/api/v1/auth',auth); app.use('/api/v1/users',users); app.use('/api/v1/employees',employees);
+app.use((err,req,res,next)=>{console.error(err);res.status(500).json({error:'Internal server error'});});
+app.listen(Number(process.env.PORT||3101),process.env.HOST||'0.0.0.0',()=>console.log(`HRMate API listening on ${process.env.PORT||3101}`));

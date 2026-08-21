@@ -1,26 +1,13 @@
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const db = require('../db');
-const { sign, auth } = require('../middleware/auth');
-
-const router = express.Router();
-
-function sanitize(u) {
-  if (!u) return null;
-  const { password_hash, ...rest } = u;
-  return rest;
-}
-
+import { Router } from 'express';
+import bcrypt from 'bcryptjs';
+import { db } from '../db/index.js';
+import { signToken, authRequired } from '../middleware/auth.js';
+const router = Router();
 router.post('/login', (req, res) => {
-  const { email, password } = req.body || {};
-  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
-  const row = db.users.find(u => u.email.toLowerCase() === String(email).toLowerCase());
-  if (!row || !bcrypt.compareSync(password, row.password_hash))
-    return res.status(401).json({ error: 'Invalid credentials' });
-  res.json({ token: sign(row), user: sanitize(row) });
+  const { phone, password } = req.body;
+  const user = db.prepare('SELECT * FROM users WHERE phone = ? AND active = 1').get(phone);
+  if (!user || !bcrypt.compareSync(password ?? '', user.password_hash)) return res.status(401).json({ error: 'Invalid phone or password' });
+  res.json({ token: signToken(user), user: { id: user.id, name: user.name, role: user.role } });
 });
-
-router.get('/me', auth, (req, res) => res.json({ user: req.user }));
-
-module.exports = router;
-module.exports.sanitize = sanitize;
+router.get('/me', authRequired, (req, res) => res.json({ user: req.user }));
+export default router;
