@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/app_settings_controller.dart';
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
+import '../attendance/attendance_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key, required this.settings});
@@ -20,9 +21,9 @@ class DashboardScreen extends StatelessWidget {
       SizedBox(height: 27),
       _WorkspaceTitle(),
       SizedBox(height: 14),
-      _ReferenceWorkspace(),
+      _ReferenceWorkspace(onAttendance: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AttendanceScreen()))),
     ])),
-    bottomNavigationBar: const _ReferenceBottomNav(),
+    bottomNavigationBar: _ReferenceBottomNav(onCalendar: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AttendanceScreen()))),
   );
 }
 
@@ -72,7 +73,7 @@ class _ReferencePunchCard extends StatelessWidget {
         ]),
       ]),
       Positioned(right: 0, top: 31, child: InkWell(
-        onTap: () {},
+        onTap: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(tr('ready_to_punch')))),
         borderRadius: BorderRadius.circular(76),
         child: Ink(width: 143, height: 143, decoration: BoxDecoration(shape: BoxShape.circle, gradient: const LinearGradient(colors: [HRMateTheme.blue, HRMateTheme.green], begin: Alignment.topLeft, end: Alignment.bottomRight), border: Border.all(color: Colors.white, width: 6), boxShadow: const [BoxShadow(color: Color(0x4422C55E), blurRadius: 24, spreadRadius: 5)]), child: const Icon(Icons.fingerprint_rounded, color: Colors.white, size: 72)),
       )),
@@ -136,45 +137,49 @@ class _WorkspaceTitle extends StatelessWidget {
 }
 
 class _ReferenceWorkspace extends StatelessWidget {
-  const _ReferenceWorkspace();
+  const _ReferenceWorkspace({required this.onAttendance});
+  final VoidCallback onAttendance;
   @override
-  Widget build(BuildContext context) => Row(children: const [
-    Expanded(child: _WorkspaceItem(icon: Icons.calendar_month_rounded, labelKey: 'attendance', subKey: 'view_history', color: HRMateTheme.blue)),
-    SizedBox(width: 8),
-    Expanded(child: _WorkspaceItem(icon: Icons.note_add_outlined, labelKey: 'apply_leave', subKey: 'request_time_off', color: Color(0xFF159947))),
-    SizedBox(width: 8),
-    Expanded(child: _WorkspaceItem(icon: Icons.groups_2_outlined, labelKey: 'my_team', subKey: 'team_overview', color: Color(0xFF814FE8))),
-    SizedBox(width: 8),
-    Expanded(child: _WorkspaceItem(icon: Icons.bar_chart_rounded, labelKey: 'reports', subKey: 'insights_stats', color: Color(0xFF1596CA))),
+  Widget build(BuildContext context) => Row(children: [
+    Expanded(child: _WorkspaceItem(icon: Icons.calendar_month_rounded, labelKey: 'attendance', subKey: 'view_history', color: HRMateTheme.blue, onTap: onAttendance)),
+    const SizedBox(width: 8),
+    const Expanded(child: _WorkspaceItem(icon: Icons.note_add_outlined, labelKey: 'apply_leave', subKey: 'request_time_off', color: Color(0xFF159947))),
+    const SizedBox(width: 8),
+    const Expanded(child: _WorkspaceItem(icon: Icons.groups_2_outlined, labelKey: 'my_team', subKey: 'team_overview', color: Color(0xFF814FE8))),
+    const SizedBox(width: 8),
+    const Expanded(child: _WorkspaceItem(icon: Icons.bar_chart_rounded, labelKey: 'reports', subKey: 'insights_stats', color: Color(0xFF1596CA))),
   ]);
 }
 
 class _WorkspaceItem extends StatelessWidget {
-  const _WorkspaceItem({required this.icon, required this.labelKey, required this.subKey, required this.color});
+  const _WorkspaceItem({required this.icon, required this.labelKey, required this.subKey, required this.color, this.onTap});
   final IconData icon;
   final String labelKey;
   final String subKey;
   final Color color;
+  final VoidCallback? onTap;
   @override
-  Widget build(BuildContext context) => Container(height: 174, padding: const EdgeInsets.fromLTRB(9, 16, 6, 11), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: const [BoxShadow(color: Color(0x0D0F2440), blurRadius: 12, offset: Offset(0, 4))]), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_SoftIcon(icon: icon, color: color), const Spacer(), Text(tr(labelKey), maxLines: 2, style: const TextStyle(color: Color(0xFF0F2440), fontWeight: FontWeight.w800, fontSize: 11)), const SizedBox(height: 4), Text(tr(subKey), maxLines: 2, style: const TextStyle(color: Color(0xFF7B8DA1), fontSize: 9))]));
+  Widget build(BuildContext context) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(20), child: Container(height: 174, padding: const EdgeInsets.fromLTRB(9, 16, 6, 11), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: const [BoxShadow(color: Color(0x0D0F2440), blurRadius: 12, offset: Offset(0, 4))]), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_SoftIcon(icon: icon, color: color), const Spacer(), Text(tr(labelKey), maxLines: 2, style: const TextStyle(color: Color(0xFF0F2440), fontWeight: FontWeight.w800, fontSize: 11)), const SizedBox(height: 4), Text(tr(subKey), maxLines: 2, style: const TextStyle(color: Color(0xFF7B8DA1), fontSize: 9))])));
 }
 
 class _ReferenceBottomNav extends StatelessWidget {
-  const _ReferenceBottomNav();
+  const _ReferenceBottomNav({required this.onCalendar});
+  final VoidCallback onCalendar;
   @override
   Widget build(BuildContext context) => SizedBox(height: 112, child: Stack(clipBehavior: Clip.none, alignment: Alignment.topCenter, children: [
-    Container(margin: const EdgeInsets.only(top: 25), decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(29)), boxShadow: [BoxShadow(color: Color(0x180F2440), blurRadius: 18, offset: Offset(0, -2))]), child: const Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-      _NavEntry(icon: Icons.home_rounded, labelKey: 'home', active: true), _NavEntry(icon: Icons.calendar_month_outlined, labelKey: 'calendar', active: false), SizedBox(width: 68), _NavEntry(icon: Icons.groups_2_outlined, labelKey: 'team', active: false), _NavEntry(icon: Icons.menu_rounded, labelKey: 'more', active: false),
+    Container(margin: const EdgeInsets.only(top: 25), decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(29)), boxShadow: [BoxShadow(color: Color(0x180F2440), blurRadius: 18, offset: Offset(0, -2))]), child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+      const _NavEntry(icon: Icons.home_rounded, labelKey: 'home', active: true), _NavEntry(icon: Icons.calendar_month_outlined, labelKey: 'calendar', active: false, onTap: onCalendar), const SizedBox(width: 68), const _NavEntry(icon: Icons.groups_2_outlined, labelKey: 'team', active: false), const _NavEntry(icon: Icons.menu_rounded, labelKey: 'more', active: false),
     ])),
     Positioned(top: -11, child: Column(children: [Container(width: 100, height: 100, padding: const EdgeInsets.all(7), decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white, boxShadow: [BoxShadow(color: Color(0x250F2440), blurRadius: 15)]), child: Container(decoration: const BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [HRMateTheme.blue, HRMateTheme.green], begin: Alignment.topLeft, end: Alignment.bottomRight)), child: const Icon(Icons.fingerprint_rounded, color: Colors.white, size: 48))), Text(tr('punch'), style: const TextStyle(color: Color(0xFF0F2440), fontWeight: FontWeight.w800, fontSize: 12))])),
   ]));
 }
 
 class _NavEntry extends StatelessWidget {
-  const _NavEntry({required this.icon, required this.labelKey, required this.active});
+  const _NavEntry({required this.icon, required this.labelKey, required this.active, this.onTap});
   final IconData icon;
   final String labelKey;
   final bool active;
+  final VoidCallback? onTap;
   @override
-  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(top: 30), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, color: active ? HRMateTheme.blue : const Color(0xFF71859A), size: 27), const SizedBox(height: 4), Text(tr(labelKey), style: TextStyle(color: active ? HRMateTheme.blue : const Color(0xFF596F85), fontWeight: active ? FontWeight.w800 : FontWeight.w600, fontSize: 11)), if (active) Container(margin: const EdgeInsets.only(top: 5), height: 3, width: 28, decoration: BoxDecoration(color: HRMateTheme.blue, borderRadius: BorderRadius.circular(4)))]));
+  Widget build(BuildContext context) => InkWell(onTap: onTap, child: Padding(padding: const EdgeInsets.only(top: 30), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, color: active ? HRMateTheme.blue : const Color(0xFF71859A), size: 27), const SizedBox(height: 4), Text(tr(labelKey), style: TextStyle(color: active ? HRMateTheme.blue : const Color(0xFF596F85), fontWeight: active ? FontWeight.w800 : FontWeight.w600, fontSize: 11)), if (active) Container(margin: const EdgeInsets.only(top: 5), height: 3, width: 28, decoration: BoxDecoration(color: HRMateTheme.blue, borderRadius: BorderRadius.circular(4)))])));
 }
