@@ -31,3 +31,7 @@ server/data/
 .vscode/
 .DS_Store
 coverage/
+
+# Python helper bytecode
+__pycache__/
+*.py[cod]
