@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_settings_controller.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -9,157 +10,205 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FC),
+      backgroundColor: const Color(0xFFF5F8FC),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
           children: [
-            Row(children: [
-              Container(
-                width: 43,
-                height: 43,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  gradient: const LinearGradient(
-                    colors: [HRMateTheme.blue, HRMateTheme.green],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: const Center(
-                  child: Text('HR', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17)),
-                ),
-              ),
-              const SizedBox(width: 10),
-              const Text('HRMate', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 22, color: Color(0xFF102A43))),
-              const Spacer(),
-              _CircleIcon(icon: Icons.notifications_none_rounded, onTap: () {}),
-              const SizedBox(width: 8),
-              const CircleAvatar(radius: 20, backgroundColor: Color(0xFFE1EEFF), child: Text('MK', style: TextStyle(color: HRMateTheme.blue, fontWeight: FontWeight.w800))),
-            ]),
-            const SizedBox(height: 26),
-            const Text('Sat Sri Akal, Manjot', style: TextStyle(fontSize: 27, height: 1.2, color: Color(0xFF102A43), fontWeight: FontWeight.w800)),
-            const SizedBox(height: 6),
-            const Text('G.D. Foods Mfg (I) Pvt. Ltd. · Khadur Sahib', style: TextStyle(fontSize: 14, color: Color(0xFF58728B))),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(21),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(27),
-                gradient: const LinearGradient(colors: [Color(0xFF1664D9), Color(0xFF25BB68)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                boxShadow: const [BoxShadow(color: Color(0x331E6FE0), blurRadius: 22, offset: Offset(0, 10))],
-              ),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Friday, 21 August', style: TextStyle(color: Color(0xDFFFFFFF), fontWeight: FontWeight.w600)),
-                const SizedBox(height: 7),
-                const Text('Ready to punch in', style: TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 17),
-                Row(children: [
-                  Expanded(child: _Pill(icon: Icons.location_on_outlined, label: 'GPS verified')),
-                  const SizedBox(width: 9),
-                  Expanded(child: _Pill(icon: Icons.camera_alt_outlined, label: 'Selfie optional')),
-                ]),
-                const SizedBox(height: 18),
-                SizedBox(width: double.infinity, child: FilledButton.icon(
-                  style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: HRMateTheme.blue, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(17))),
-                  icon: const Icon(Icons.fingerprint_rounded, size: 25),
-                  label: const Text('Punch in', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-                  onPressed: () {},
-                )),
-              ]),
-            ),
+            const _TopBar(),
             const SizedBox(height: 25),
-            const Text('Today at a glance', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF102A43))),
-            const SizedBox(height: 13),
-            Row(children: const [
-              Expanded(child: _StatCard(value: '124', label: 'Present', color: Color(0xFF22A865))),
-              SizedBox(width: 10),
-              Expanded(child: _StatCard(value: '06', label: 'On leave', color: Color(0xFF2776E5))),
-              SizedBox(width: 10),
-              Expanded(child: _StatCard(value: '03', label: 'Late', color: Color(0xFFF59E0B))),
-            ]),
-            const SizedBox(height: 26),
-            const Text('Your workspace', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF102A43))),
-            const SizedBox(height: 13),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.65,
-              children: const [
-                _ActionCard(icon: Icons.calendar_month_outlined, label: 'Attendance', tint: Color(0xFFE7F0FF), color: HRMateTheme.blue),
-                _ActionCard(icon: Icons.beach_access_outlined, label: 'Apply leave', tint: Color(0xFFE7F8EF), color: HRMateTheme.green),
-                _ActionCard(icon: Icons.groups_2_outlined, label: 'My team', tint: Color(0xFFFFF3DB), color: Color(0xFFF29B16)),
-                _ActionCard(icon: Icons.insert_chart_outlined_rounded, label: 'Reports', tint: Color(0xFFF1ECFF), color: Color(0xFF7B61D9)),
-              ],
+            Text(
+              '${tr('sat_sri_akal')}, ${tr('sample_name')} 🙏',
+              style: const TextStyle(color: Color(0xFF0F2440), fontSize: 27, fontWeight: FontWeight.w800),
             ),
+            const SizedBox(height: 7),
+            Text(tr('company_location'), style: const TextStyle(color: Color(0xFF698098), fontSize: 14)),
+            const SizedBox(height: 22),
+            const _PunchCard(),
+            const SizedBox(height: 23),
+            const _StatsRow(),
+            const SizedBox(height: 25),
+            Text(tr('your_workspace'), style: const TextStyle(color: Color(0xFF0F2440), fontSize: 19, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 13),
+            const _WorkspaceGrid(),
           ],
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
-        onDestinationSelected: (_) {},
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.grid_view_rounded), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.calendar_month_outlined), label: 'Attendance'),
-          NavigationDestination(icon: Icon(Icons.beach_access_outlined), label: 'Leave'),
-          NavigationDestination(icon: Icon(Icons.person_outline_rounded), label: 'Profile'),
-        ],
-      ),
+      bottomNavigationBar: const _BottomNav(),
     );
   }
 }
 
-class _Pill extends StatelessWidget {
-  const _Pill({required this.icon, required this.label});
-  final IconData icon;
-  final String label;
+class _TopBar extends StatelessWidget {
+  const _TopBar();
+  @override
+  Widget build(BuildContext context) => Row(children: [
+    ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Image.asset('assets/branding/hrmate-app-icon.png', width: 42, height: 42, fit: BoxFit.cover),
+    ),
+    const SizedBox(width: 9),
+    RichText(text: const TextSpan(style: TextStyle(fontSize: 21), children: [
+      TextSpan(text: 'HR', style: TextStyle(color: Color(0xFF0F2440), fontWeight: FontWeight.w900)),
+      TextSpan(text: 'Mate', style: TextStyle(color: Color(0xFF0F2440), fontWeight: FontWeight.w400)),
+    ])),
+    const Spacer(),
+    Container(
+      height: 42,
+      width: 42,
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), boxShadow: const [BoxShadow(color: Color(0x0D0F2440), blurRadius: 12, offset: Offset(0, 4))]),
+      child: const Icon(Icons.notifications_none_rounded, color: Color(0xFF25415D)),
+    ),
+    const SizedBox(width: 9),
+    const CircleAvatar(radius: 21, backgroundColor: Color(0xFFE3EEFF), child: Text('MK', style: TextStyle(color: HRMateTheme.blue, fontWeight: FontWeight.w800))),
+  ]);
+}
+
+class _PunchCard extends StatelessWidget {
+  const _PunchCard();
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-    decoration: BoxDecoration(color: Colors.white.withOpacity(.16), borderRadius: BorderRadius.circular(12)),
-    child: Row(children: [Icon(icon, size: 16, color: Colors.white), const SizedBox(width: 5), Expanded(child: Text(label, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)))]),
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: const [BoxShadow(color: Color(0x120F2440), blurRadius: 20, offset: Offset(0, 8))]),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(tr('today_date'), style: const TextStyle(color: Color(0xFF6B8298), fontWeight: FontWeight.w600)),
+      const SizedBox(height: 7),
+      Text(tr('ready_to_punch'), style: const TextStyle(color: Color(0xFF0F2440), fontSize: 22, fontWeight: FontWeight.w800)),
+      const SizedBox(height: 5),
+      Text(tr('productive_day'), style: const TextStyle(color: Color(0xFF72869A), fontSize: 13)),
+      const SizedBox(height: 17),
+      Row(children: [
+        const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _StatusChip(icon: Icons.location_on_rounded, labelKey: 'gps_verified', green: true),
+          SizedBox(height: 9),
+          _StatusChip(icon: Icons.camera_alt_outlined, labelKey: 'selfie_optional', green: false),
+        ])),
+        const SizedBox(width: 14),
+        InkWell(
+          onTap: () {},
+          borderRadius: BorderRadius.circular(47),
+          child: Ink(
+            width: 94,
+            height: 94,
+            decoration: const BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [HRMateTheme.blue, HRMateTheme.green], begin: Alignment.topLeft, end: Alignment.bottomRight)),
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const Icon(Icons.fingerprint_rounded, color: Colors.white, size: 35),
+              const SizedBox(height: 2),
+              Text(tr('punch'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
+            ]),
+          ),
+        ),
+      ]),
+    ]),
   );
 }
 
-class _CircleIcon extends StatelessWidget {
-  const _CircleIcon({required this.icon, required this.onTap});
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.icon, required this.labelKey, required this.green});
   final IconData icon;
-  final VoidCallback onTap;
+  final String labelKey;
+  final bool green;
   @override
-  Widget build(BuildContext context) => Material(color: Colors.white, borderRadius: BorderRadius.circular(14), child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(14), child: SizedBox(width: 43, height: 43, child: Icon(icon, color: const Color(0xFF36526B)))));
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+    decoration: BoxDecoration(color: green ? const Color(0xFFE8F8EF) : const Color(0xFFEAF2FF), borderRadius: BorderRadius.circular(10)),
+    child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 16, color: green ? HRMateTheme.green : HRMateTheme.blue), const SizedBox(width: 6), Text(tr(labelKey), style: TextStyle(color: green ? const Color(0xFF19874A) : HRMateTheme.blue, fontWeight: FontWeight.w700, fontSize: 12))]),
+  );
+}
+
+class _StatsRow extends StatelessWidget {
+  const _StatsRow();
+  @override
+  Widget build(BuildContext context) => const Row(children: [
+    Expanded(child: _StatCard(value: '124', labelKey: 'present', trendKey: 'this_week', color: Color(0xFF22A865))),
+    SizedBox(width: 10),
+    Expanded(child: _StatCard(value: '06', labelKey: 'leave', trendKey: 'this_week', color: Color(0xFFF29B16))),
+    SizedBox(width: 10),
+    Expanded(child: _StatCard(value: '03', labelKey: 'late', trendKey: 'this_week', color: Color(0xFFEA5455))),
+  ]);
 }
 
 class _StatCard extends StatelessWidget {
-  const _StatCard({required this.value, required this.label, required this.color});
+  const _StatCard({required this.value, required this.labelKey, required this.trendKey, required this.color});
   final String value;
-  final String label;
+  final String labelKey;
+  final String trendKey;
   final Color color;
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(vertical: 15),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
-    child: Column(children: [Text(value, style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.w800)), const SizedBox(height: 3), Text(label, style: const TextStyle(color: Color(0xFF627A90), fontSize: 11, fontWeight: FontWeight.w600))]),
+    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(17), boxShadow: const [BoxShadow(color: Color(0x0A0F2440), blurRadius: 10, offset: Offset(0, 4))]),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(value, style: TextStyle(color: color, fontSize: 23, fontWeight: FontWeight.w800)),
+      const SizedBox(height: 2),
+      Text(tr(labelKey), style: const TextStyle(color: Color(0xFF28445E), fontWeight: FontWeight.w700, fontSize: 12)),
+      const SizedBox(height: 5),
+      Text('+12 ${tr(trendKey)}', style: const TextStyle(color: Color(0xFF8A9CAD), fontSize: 10)),
+    ]),
   );
 }
 
-class _ActionCard extends StatelessWidget {
-  const _ActionCard({required this.icon, required this.label, required this.tint, required this.color});
-  final IconData icon;
-  final String label;
-  final Color tint;
-  final Color color;
+class _WorkspaceGrid extends StatelessWidget {
+  const _WorkspaceGrid();
   @override
-  Widget build(BuildContext context) => Material(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(19),
-    child: InkWell(borderRadius: BorderRadius.circular(19), onTap: () {}, child: Padding(
-      padding: const EdgeInsets.all(14),
-      child: Row(children: [Container(padding: const EdgeInsets.all(9), decoration: BoxDecoration(color: tint, borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: color, size: 21)), const SizedBox(width: 10), Expanded(child: Text(label, style: const TextStyle(color: Color(0xFF18344C), fontSize: 13, fontWeight: FontWeight.w700)))]),
-    )),
+  Widget build(BuildContext context) => GridView.count(
+    shrinkWrap: true,
+    physics: const NeverScrollableScrollPhysics(),
+    crossAxisCount: 2,
+    crossAxisSpacing: 12,
+    mainAxisSpacing: 12,
+    childAspectRatio: 1.53,
+    children: const [
+      _WorkspaceCard(icon: Icons.calendar_month_rounded, labelKey: 'attendance', color: HRMateTheme.blue, tint: Color(0xFFEAF2FF)),
+      _WorkspaceCard(icon: Icons.beach_access_outlined, labelKey: 'apply_leave', color: Color(0xFF22A865), tint: Color(0xFFE8F8EF)),
+      _WorkspaceCard(icon: Icons.groups_rounded, labelKey: 'my_team', color: Color(0xFFF29B16), tint: Color(0xFFFFF3DB)),
+      _WorkspaceCard(icon: Icons.bar_chart_rounded, labelKey: 'reports', color: Color(0xFF7B61D9), tint: Color(0xFFF1ECFF)),
+    ],
   );
+}
+
+class _WorkspaceCard extends StatelessWidget {
+  const _WorkspaceCard({required this.icon, required this.labelKey, required this.color, required this.tint});
+  final IconData icon;
+  final String labelKey;
+  final Color color;
+  final Color tint;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(15),
+    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: const [BoxShadow(color: Color(0x0A0F2440), blurRadius: 10, offset: Offset(0, 4))]),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+      Container(padding: const EdgeInsets.all(9), decoration: BoxDecoration(color: tint, borderRadius: BorderRadius.circular(11)), child: Icon(icon, color: color, size: 22)),
+      const SizedBox(height: 9),
+      Text(tr(labelKey), style: const TextStyle(color: Color(0xFF0F2440), fontWeight: FontWeight.w800, fontSize: 14)),
+    ]),
+  );
+}
+
+class _BottomNav extends StatelessWidget {
+  const _BottomNav();
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 82,
+    child: Stack(clipBehavior: Clip.none, alignment: Alignment.topCenter, children: [
+      Container(decoration: const BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Color(0x120F2440), blurRadius: 14, offset: Offset(0, -3))]), child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: const [
+        _NavItem(icon: Icons.home_rounded, labelKey: 'home', active: true),
+        _NavItem(icon: Icons.calendar_month_outlined, labelKey: 'leave', active: false),
+        SizedBox(width: 62),
+        _NavItem(icon: Icons.groups_2_outlined, labelKey: 'team', active: false),
+        _NavItem(icon: Icons.more_horiz_rounded, labelKey: 'more', active: false),
+      ])),
+      Positioned(top: -26, child: Container(width: 62, height: 62, decoration: const BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [HRMateTheme.blue, HRMateTheme.green])), child: const Icon(Icons.fingerprint_rounded, color: Colors.white, size: 31))),
+    ]),
+  );
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({required this.icon, required this.labelKey, required this.active});
+  final IconData icon;
+  final String labelKey;
+  final bool active;
+  @override
+  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(top: 22), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 22, color: active ? HRMateTheme.blue : const Color(0xFF8A9CAD)), const SizedBox(height: 2), Text(tr(labelKey), style: TextStyle(color: active ? HRMateTheme.blue : const Color(0xFF8A9CAD), fontSize: 10, fontWeight: FontWeight.w700)), if (active) Container(margin: const EdgeInsets.only(top: 3), height: 2, width: 14, color: HRMateTheme.blue)]));
 }

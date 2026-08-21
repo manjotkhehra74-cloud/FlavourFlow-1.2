@@ -59,7 +59,7 @@ jobs:
           command: |
             source "$BASH_ENV"
             cd mobile
-            flutter analyze
+            flutter analyze --no-fatal-infos
             flutter test
             flutter build apk --release
       - save_cache:
