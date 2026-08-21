@@ -77,6 +77,11 @@ const Map<String, Map<AppLanguage, String>> translations = {
   'home': {AppLanguage.en: 'Home', AppLanguage.pa: 'ਹੋਮ', AppLanguage.hi: 'होम', AppLanguage.gu: 'Home', AppLanguage.mr: 'Home', AppLanguage.bn: 'Home', AppLanguage.ta: 'Home', AppLanguage.te: 'Home'},
   'team': {AppLanguage.en: 'Team', AppLanguage.pa: 'ਟੀਮ', AppLanguage.hi: 'टीम', AppLanguage.gu: 'Team', AppLanguage.mr: 'Team', AppLanguage.bn: 'Team', AppLanguage.ta: 'Team', AppLanguage.te: 'Team'},
   'more': {AppLanguage.en: 'More', AppLanguage.pa: 'ਹੋਰ', AppLanguage.hi: 'और', AppLanguage.gu: 'More', AppLanguage.mr: 'More', AppLanguage.bn: 'More', AppLanguage.ta: 'More', AppLanguage.te: 'More'},
+  'calendar': {AppLanguage.en: 'Calendar', AppLanguage.pa: 'ਕੈਲੰਡਰ', AppLanguage.hi: 'कैलेंडर', AppLanguage.gu: 'Calendar', AppLanguage.mr: 'Calendar', AppLanguage.bn: 'Calendar', AppLanguage.ta: 'Calendar', AppLanguage.te: 'Calendar'},
+  'view_history': {AppLanguage.en: 'View history', AppLanguage.pa: 'ਇਤਿਹਾਸ ਵੇਖੋ', AppLanguage.hi: 'इतिहास देखें', AppLanguage.gu: 'View history', AppLanguage.mr: 'View history', AppLanguage.bn: 'View history', AppLanguage.ta: 'View history', AppLanguage.te: 'View history'},
+  'request_time_off': {AppLanguage.en: 'Request time off', AppLanguage.pa: 'ਛੁੱਟੀ ਮੰਗੋ', AppLanguage.hi: 'छुट्टी मांगें', AppLanguage.gu: 'Request time off', AppLanguage.mr: 'Request time off', AppLanguage.bn: 'Request time off', AppLanguage.ta: 'Request time off', AppLanguage.te: 'Request time off'},
+  'team_overview': {AppLanguage.en: 'Team overview', AppLanguage.pa: 'ਟੀਮ ਸੰਖੇਪ', AppLanguage.hi: 'टीम अवलोकन', AppLanguage.gu: 'Team overview', AppLanguage.mr: 'Team overview', AppLanguage.bn: 'Team overview', AppLanguage.ta: 'Team overview', AppLanguage.te: 'Team overview'},
+  'insights_stats': {AppLanguage.en: 'Insights & stats', AppLanguage.pa: 'ਅੰਕੜੇ', AppLanguage.hi: 'जानकारी और आँकड़े', AppLanguage.gu: 'Insights & stats', AppLanguage.mr: 'Insights & stats', AppLanguage.bn: 'Insights & stats', AppLanguage.ta: 'Insights & stats', AppLanguage.te: 'Insights & stats'},
 };
 
 String tr(String key, {AppLanguage language = AppLanguage.en}) =>

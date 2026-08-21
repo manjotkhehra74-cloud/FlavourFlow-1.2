@@ -9,206 +9,172 @@ class DashboardScreen extends StatelessWidget {
   final AppSettingsController settings;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F8FC),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-          children: [
-            const _TopBar(),
-            const SizedBox(height: 25),
-            Text(
-              '${tr('sat_sri_akal')}, ${tr('sample_name')} 🙏',
-              style: const TextStyle(color: Color(0xFF0F2440), fontSize: 27, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 7),
-            Text(tr('company_location'), style: const TextStyle(color: Color(0xFF698098), fontSize: 14)),
-            const SizedBox(height: 22),
-            const _PunchCard(),
-            const SizedBox(height: 23),
-            const _StatsRow(),
-            const SizedBox(height: 25),
-            Text(tr('your_workspace'), style: const TextStyle(color: Color(0xFF0F2440), fontSize: 19, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 13),
-            const _WorkspaceGrid(),
-          ],
-        ),
-      ),
-      bottomNavigationBar: const _BottomNav(),
-    );
-  }
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: const Color(0xFFF5F8FC),
+    body: SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(18, 18, 18, 134), children: const [
+      _ReferenceHeader(),
+      SizedBox(height: 24),
+      _ReferencePunchCard(),
+      SizedBox(height: 22),
+      _ReferenceStats(),
+      SizedBox(height: 27),
+      _WorkspaceTitle(),
+      SizedBox(height: 14),
+      _ReferenceWorkspace(),
+    ])),
+    bottomNavigationBar: const _ReferenceBottomNav(),
+  );
 }
 
-class _TopBar extends StatelessWidget {
-  const _TopBar();
+class _ReferenceHeader extends StatelessWidget {
+  const _ReferenceHeader();
   @override
   Widget build(BuildContext context) => Row(children: [
-    ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: Image.asset('assets/branding/hrmate-app-icon.png', width: 42, height: 42, fit: BoxFit.cover),
-    ),
-    const SizedBox(width: 9),
-    RichText(text: const TextSpan(style: TextStyle(fontSize: 21), children: [
-      TextSpan(text: 'HR', style: TextStyle(color: Color(0xFF0F2440), fontWeight: FontWeight.w900)),
-      TextSpan(text: 'Mate', style: TextStyle(color: Color(0xFF0F2440), fontWeight: FontWeight.w400)),
-    ])),
-    const Spacer(),
-    Container(
-      height: 42,
-      width: 42,
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), boxShadow: const [BoxShadow(color: Color(0x0D0F2440), blurRadius: 12, offset: Offset(0, 4))]),
-      child: const Icon(Icons.notifications_none_rounded, color: Color(0xFF25415D)),
-    ),
-    const SizedBox(width: 9),
-    const CircleAvatar(radius: 21, backgroundColor: Color(0xFFE3EEFF), child: Text('MK', style: TextStyle(color: HRMateTheme.blue, fontWeight: FontWeight.w800))),
+    Container(width: 62, height: 62, padding: const EdgeInsets.all(3), decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white, boxShadow: [BoxShadow(color: Color(0x150F2440), blurRadius: 10)]), child: ClipOval(child: Image.asset('assets/branding/hrmate-app-icon.png', fit: BoxFit.cover))),
+    const SizedBox(width: 13),
+    Expanded(child: Text('${tr('sat_sri_akal')}, ${tr('sample_name')} 🙏', maxLines: 2, style: const TextStyle(color: Color(0xFF0F2440), fontSize: 23, height: 1.15, fontWeight: FontWeight.w800))),
+    _HeaderIcon(icon: Icons.notifications_none_rounded, dot: true),
+    const SizedBox(width: 10),
+    Container(width: 57, height: 57, padding: const EdgeInsets.all(3), decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white, boxShadow: [BoxShadow(color: Color(0x150F2440), blurRadius: 10)]), child: const CircleAvatar(backgroundColor: Color(0xFF173D72), child: Icon(Icons.person_rounded, color: Colors.white, size: 31))),
   ]);
 }
 
-class _PunchCard extends StatelessWidget {
-  const _PunchCard();
+class _HeaderIcon extends StatelessWidget {
+  const _HeaderIcon({required this.icon, required this.dot});
+  final IconData icon;
+  final bool dot;
+  @override
+  Widget build(BuildContext context) => Stack(clipBehavior: Clip.none, children: [
+    Container(width: 57, height: 57, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), boxShadow: const [BoxShadow(color: Color(0x150F2440), blurRadius: 10)]), child: Icon(icon, color: const Color(0xFF0F2440), size: 29)),
+    if (dot) const Positioned(right: 5, top: 5, child: CircleAvatar(radius: 5, backgroundColor: HRMateTheme.blue)),
+  ]);
+}
+
+class _ReferencePunchCard extends StatelessWidget {
+  const _ReferencePunchCard();
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: const [BoxShadow(color: Color(0x120F2440), blurRadius: 20, offset: Offset(0, 8))]),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(tr('today_date'), style: const TextStyle(color: Color(0xFF6B8298), fontWeight: FontWeight.w600)),
-      const SizedBox(height: 7),
-      Text(tr('ready_to_punch'), style: const TextStyle(color: Color(0xFF0F2440), fontSize: 22, fontWeight: FontWeight.w800)),
-      const SizedBox(height: 5),
-      Text(tr('productive_day'), style: const TextStyle(color: Color(0xFF72869A), fontSize: 13)),
-      const SizedBox(height: 17),
-      Row(children: [
-        const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _StatusChip(icon: Icons.location_on_rounded, labelKey: 'gps_verified', green: true),
-          SizedBox(height: 9),
-          _StatusChip(icon: Icons.camera_alt_outlined, labelKey: 'selfie_optional', green: false),
-        ])),
-        const SizedBox(width: 14),
-        InkWell(
-          onTap: () {},
-          borderRadius: BorderRadius.circular(47),
-          child: Ink(
-            width: 94,
-            height: 94,
-            decoration: const BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [HRMateTheme.blue, HRMateTheme.green], begin: Alignment.topLeft, end: Alignment.bottomRight)),
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              const Icon(Icons.fingerprint_rounded, color: Colors.white, size: 35),
-              const SizedBox(height: 2),
-              Text(tr('punch'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
-            ]),
-          ),
-        ),
+    height: 273,
+    padding: const EdgeInsets.fromLTRB(22, 24, 17, 20),
+    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(28), boxShadow: const [BoxShadow(color: Color(0x180F2440), blurRadius: 25, offset: Offset(0, 10))]),
+    child: Stack(children: [
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [const _SoftIcon(icon: Icons.calendar_month_rounded, color: HRMateTheme.blue), const SizedBox(width: 10), Text(tr('today_date'), style: const TextStyle(color: Color(0xFF0F2440), fontWeight: FontWeight.w800, fontSize: 17))]),
+        const SizedBox(height: 31),
+        SizedBox(width: 230, child: Text(tr('ready_to_punch'), style: const TextStyle(color: Color(0xFF0F2440), fontWeight: FontWeight.w900, fontSize: 29, height: 1.08))),
+        const SizedBox(height: 10),
+        SizedBox(width: 225, child: Text(tr('productive_day'), style: const TextStyle(color: Color(0xFF60758B), fontSize: 15))),
+        const Spacer(),
+        const Row(children: [
+          _RoundedChip(icon: Icons.location_on_rounded, labelKey: 'gps_verified', green: true),
+          SizedBox(width: 9),
+          _RoundedChip(icon: Icons.face_retouching_natural_rounded, labelKey: 'selfie_optional', green: false),
+        ]),
       ]),
+      Positioned(right: 0, top: 31, child: InkWell(
+        onTap: () {},
+        borderRadius: BorderRadius.circular(76),
+        child: Ink(width: 143, height: 143, decoration: BoxDecoration(shape: BoxShape.circle, gradient: const LinearGradient(colors: [HRMateTheme.blue, HRMateTheme.green], begin: Alignment.topLeft, end: Alignment.bottomRight), border: Border.all(color: Colors.white, width: 6), boxShadow: const [BoxShadow(color: Color(0x4422C55E), blurRadius: 24, spreadRadius: 5)]), child: const Icon(Icons.fingerprint_rounded, color: Colors.white, size: 72)),
+      )),
     ]),
   );
 }
 
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.icon, required this.labelKey, required this.green});
+class _SoftIcon extends StatelessWidget {
+  const _SoftIcon({required this.icon, required this.color});
+  final IconData icon;
+  final Color color;
+  @override
+  Widget build(BuildContext context) => Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(shape: BoxShape.circle, color: color.withValues(alpha: .10)), child: Icon(icon, color: color, size: 22));
+}
+
+class _RoundedChip extends StatelessWidget {
+  const _RoundedChip({required this.icon, required this.labelKey, required this.green});
   final IconData icon;
   final String labelKey;
   final bool green;
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-    decoration: BoxDecoration(color: green ? const Color(0xFFE8F8EF) : const Color(0xFFEAF2FF), borderRadius: BorderRadius.circular(10)),
-    child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 16, color: green ? HRMateTheme.green : HRMateTheme.blue), const SizedBox(width: 6), Text(tr(labelKey), style: TextStyle(color: green ? const Color(0xFF19874A) : HRMateTheme.blue, fontWeight: FontWeight.w700, fontSize: 12))]),
-  );
+  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9), decoration: BoxDecoration(color: green ? const Color(0xFFE6F8ED) : const Color(0xFFE8F1FF), borderRadius: BorderRadius.circular(20)), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, color: green ? const Color(0xFF159947) : HRMateTheme.blue, size: 20), const SizedBox(width: 6), Text(tr(labelKey), style: TextStyle(color: green ? const Color(0xFF159947) : HRMateTheme.blue, fontWeight: FontWeight.w700, fontSize: 12))]));
 }
 
-class _StatsRow extends StatelessWidget {
-  const _StatsRow();
+class _ReferenceStats extends StatelessWidget {
+  const _ReferenceStats();
   @override
-  Widget build(BuildContext context) => const Row(children: [
-    Expanded(child: _StatCard(value: '124', labelKey: 'present', trendKey: 'this_week', color: Color(0xFF22A865))),
-    SizedBox(width: 10),
-    Expanded(child: _StatCard(value: '06', labelKey: 'leave', trendKey: 'this_week', color: Color(0xFFF29B16))),
-    SizedBox(width: 10),
-    Expanded(child: _StatCard(value: '03', labelKey: 'late', trendKey: 'this_week', color: Color(0xFFEA5455))),
-  ]);
+  Widget build(BuildContext context) => Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFFF1F5FC), borderRadius: BorderRadius.circular(27)), child: const Row(children: [
+    Expanded(child: _DetailedStat(icon: Icons.groups_rounded, labelKey: 'present', value: '124', trend: '+12', color: Color(0xFF149550), tint: Color(0xFFE8F8EF))),
+    SizedBox(width: 8),
+    Expanded(child: _DetailedStat(icon: Icons.calendar_month_rounded, labelKey: 'leave', value: '06', trend: '-2', color: Color(0xFFE99212), tint: Color(0xFFFFF1D9))),
+    SizedBox(width: 8),
+    Expanded(child: _DetailedStat(icon: Icons.access_time_rounded, labelKey: 'late', value: '03', trend: '+1', color: Color(0xFFEF3737), tint: Color(0xFFFFE8E8))),
+  ]));
 }
 
-class _StatCard extends StatelessWidget {
-  const _StatCard({required this.value, required this.labelKey, required this.trendKey, required this.color});
-  final String value;
-  final String labelKey;
-  final String trendKey;
-  final Color color;
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(17), boxShadow: const [BoxShadow(color: Color(0x0A0F2440), blurRadius: 10, offset: Offset(0, 4))]),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(value, style: TextStyle(color: color, fontSize: 23, fontWeight: FontWeight.w800)),
-      const SizedBox(height: 2),
-      Text(tr(labelKey), style: const TextStyle(color: Color(0xFF28445E), fontWeight: FontWeight.w700, fontSize: 12)),
-      const SizedBox(height: 5),
-      Text('+12 ${tr(trendKey)}', style: const TextStyle(color: Color(0xFF8A9CAD), fontSize: 10)),
-    ]),
-  );
-}
-
-class _WorkspaceGrid extends StatelessWidget {
-  const _WorkspaceGrid();
-  @override
-  Widget build(BuildContext context) => GridView.count(
-    shrinkWrap: true,
-    physics: const NeverScrollableScrollPhysics(),
-    crossAxisCount: 2,
-    crossAxisSpacing: 12,
-    mainAxisSpacing: 12,
-    childAspectRatio: 1.53,
-    children: const [
-      _WorkspaceCard(icon: Icons.calendar_month_rounded, labelKey: 'attendance', color: HRMateTheme.blue, tint: Color(0xFFEAF2FF)),
-      _WorkspaceCard(icon: Icons.beach_access_outlined, labelKey: 'apply_leave', color: Color(0xFF22A865), tint: Color(0xFFE8F8EF)),
-      _WorkspaceCard(icon: Icons.groups_rounded, labelKey: 'my_team', color: Color(0xFFF29B16), tint: Color(0xFFFFF3DB)),
-      _WorkspaceCard(icon: Icons.bar_chart_rounded, labelKey: 'reports', color: Color(0xFF7B61D9), tint: Color(0xFFF1ECFF)),
-    ],
-  );
-}
-
-class _WorkspaceCard extends StatelessWidget {
-  const _WorkspaceCard({required this.icon, required this.labelKey, required this.color, required this.tint});
+class _DetailedStat extends StatelessWidget {
+  const _DetailedStat({required this.icon, required this.labelKey, required this.value, required this.trend, required this.color, required this.tint});
   final IconData icon;
   final String labelKey;
+  final String value;
+  final String trend;
   final Color color;
   final Color tint;
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(15),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: const [BoxShadow(color: Color(0x0A0F2440), blurRadius: 10, offset: Offset(0, 4))]),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-      Container(padding: const EdgeInsets.all(9), decoration: BoxDecoration(color: tint, borderRadius: BorderRadius.circular(11)), child: Icon(icon, color: color, size: 22)),
-      const SizedBox(height: 9),
-      Text(tr(labelKey), style: const TextStyle(color: Color(0xFF0F2440), fontWeight: FontWeight.w800, fontSize: 14)),
-    ]),
-  );
+  Widget build(BuildContext context) => Container(height: 161, padding: const EdgeInsets.fromLTRB(12, 13, 8, 12), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: const [BoxShadow(color: Color(0x0C0F2440), blurRadius: 9)]), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    _SoftIcon(icon: icon, color: color),
+    const SizedBox(height: 8),
+    Text(tr(labelKey), style: const TextStyle(color: Color(0xFF0F2440), fontWeight: FontWeight.w700, fontSize: 13)),
+    const SizedBox(height: 2),
+    Text(value, style: TextStyle(color: color, fontSize: 29, fontWeight: FontWeight.w900)),
+    const Spacer(),
+    Row(children: [Icon(Icons.trending_up_rounded, color: color, size: 15), const SizedBox(width: 3), Text('$trend ${tr('this_week')}', style: const TextStyle(color: Color(0xFF73869A), fontSize: 10))]),
+  ]));
 }
 
-class _BottomNav extends StatelessWidget {
-  const _BottomNav();
+class _WorkspaceTitle extends StatelessWidget {
+  const _WorkspaceTitle();
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 82,
-    child: Stack(clipBehavior: Clip.none, alignment: Alignment.topCenter, children: [
-      Container(decoration: const BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Color(0x120F2440), blurRadius: 14, offset: Offset(0, -3))]), child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: const [
-        _NavItem(icon: Icons.home_rounded, labelKey: 'home', active: true),
-        _NavItem(icon: Icons.calendar_month_outlined, labelKey: 'leave', active: false),
-        SizedBox(width: 62),
-        _NavItem(icon: Icons.groups_2_outlined, labelKey: 'team', active: false),
-        _NavItem(icon: Icons.more_horiz_rounded, labelKey: 'more', active: false),
-      ])),
-      Positioned(top: -26, child: Container(width: 62, height: 62, decoration: const BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [HRMateTheme.blue, HRMateTheme.green])), child: const Icon(Icons.fingerprint_rounded, color: Colors.white, size: 31))),
-    ]),
-  );
+  Widget build(BuildContext context) => Text(tr('your_workspace'), style: const TextStyle(color: Color(0xFF0F2440), fontSize: 22, fontWeight: FontWeight.w900));
 }
 
-class _NavItem extends StatelessWidget {
-  const _NavItem({required this.icon, required this.labelKey, required this.active});
+class _ReferenceWorkspace extends StatelessWidget {
+  const _ReferenceWorkspace();
+  @override
+  Widget build(BuildContext context) => Row(children: const [
+    Expanded(child: _WorkspaceItem(icon: Icons.calendar_month_rounded, labelKey: 'attendance', subKey: 'view_history', color: HRMateTheme.blue)),
+    SizedBox(width: 8),
+    Expanded(child: _WorkspaceItem(icon: Icons.note_add_outlined, labelKey: 'apply_leave', subKey: 'request_time_off', color: Color(0xFF159947))),
+    SizedBox(width: 8),
+    Expanded(child: _WorkspaceItem(icon: Icons.groups_2_outlined, labelKey: 'my_team', subKey: 'team_overview', color: Color(0xFF814FE8))),
+    SizedBox(width: 8),
+    Expanded(child: _WorkspaceItem(icon: Icons.bar_chart_rounded, labelKey: 'reports', subKey: 'insights_stats', color: Color(0xFF1596CA))),
+  ]);
+}
+
+class _WorkspaceItem extends StatelessWidget {
+  const _WorkspaceItem({required this.icon, required this.labelKey, required this.subKey, required this.color});
+  final IconData icon;
+  final String labelKey;
+  final String subKey;
+  final Color color;
+  @override
+  Widget build(BuildContext context) => Container(height: 174, padding: const EdgeInsets.fromLTRB(9, 16, 6, 11), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: const [BoxShadow(color: Color(0x0D0F2440), blurRadius: 12, offset: Offset(0, 4))]), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_SoftIcon(icon: icon, color: color), const Spacer(), Text(tr(labelKey), maxLines: 2, style: const TextStyle(color: Color(0xFF0F2440), fontWeight: FontWeight.w800, fontSize: 11)), const SizedBox(height: 4), Text(tr(subKey), maxLines: 2, style: const TextStyle(color: Color(0xFF7B8DA1), fontSize: 9))]));
+}
+
+class _ReferenceBottomNav extends StatelessWidget {
+  const _ReferenceBottomNav();
+  @override
+  Widget build(BuildContext context) => SizedBox(height: 112, child: Stack(clipBehavior: Clip.none, alignment: Alignment.topCenter, children: [
+    Container(margin: const EdgeInsets.only(top: 25), decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(29)), boxShadow: [BoxShadow(color: Color(0x180F2440), blurRadius: 18, offset: Offset(0, -2))]), child: const Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+      _NavEntry(icon: Icons.home_rounded, labelKey: 'home', active: true), _NavEntry(icon: Icons.calendar_month_outlined, labelKey: 'calendar', active: false), SizedBox(width: 68), _NavEntry(icon: Icons.groups_2_outlined, labelKey: 'team', active: false), _NavEntry(icon: Icons.menu_rounded, labelKey: 'more', active: false),
+    ])),
+    Positioned(top: -11, child: Column(children: [Container(width: 100, height: 100, padding: const EdgeInsets.all(7), decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white, boxShadow: [BoxShadow(color: Color(0x250F2440), blurRadius: 15)]), child: Container(decoration: const BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [HRMateTheme.blue, HRMateTheme.green], begin: Alignment.topLeft, end: Alignment.bottomRight)), child: const Icon(Icons.fingerprint_rounded, color: Colors.white, size: 48))), Text(tr('punch'), style: const TextStyle(color: Color(0xFF0F2440), fontWeight: FontWeight.w800, fontSize: 12))])),
+  ]));
+}
+
+class _NavEntry extends StatelessWidget {
+  const _NavEntry({required this.icon, required this.labelKey, required this.active});
   final IconData icon;
   final String labelKey;
   final bool active;
   @override
-  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(top: 22), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 22, color: active ? HRMateTheme.blue : const Color(0xFF8A9CAD)), const SizedBox(height: 2), Text(tr(labelKey), style: TextStyle(color: active ? HRMateTheme.blue : const Color(0xFF8A9CAD), fontSize: 10, fontWeight: FontWeight.w700)), if (active) Container(margin: const EdgeInsets.only(top: 3), height: 2, width: 14, color: HRMateTheme.blue)]));
+  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(top: 30), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, color: active ? HRMateTheme.blue : const Color(0xFF71859A), size: 27), const SizedBox(height: 4), Text(tr(labelKey), style: TextStyle(color: active ? HRMateTheme.blue : const Color(0xFF596F85), fontWeight: active ? FontWeight.w800 : FontWeight.w600, fontSize: 11)), if (active) Container(margin: const EdgeInsets.only(top: 5), height: 3, width: 28, decoration: BoxDecoration(color: HRMateTheme.blue, borderRadius: BorderRadius.circular(4)))]));
 }
