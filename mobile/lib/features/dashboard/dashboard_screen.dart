@@ -12,7 +12,7 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: const Color(0xFFF5F8FC),
-    body: SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(18, 18, 18, 134), children: const [
+    body: SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(18, 18, 18, 134), children: [
       _ReferenceHeader(),
       SizedBox(height: 24),
       _ReferencePunchCard(),
@@ -34,7 +34,7 @@ class _ReferenceHeader extends StatelessWidget {
     Container(width: 62, height: 62, padding: const EdgeInsets.all(3), decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white, boxShadow: [BoxShadow(color: Color(0x150F2440), blurRadius: 10)]), child: ClipOval(child: Image.asset('assets/branding/hrmate-app-icon.png', fit: BoxFit.cover))),
     const SizedBox(width: 13),
     Expanded(child: Text('${tr('sat_sri_akal')}, ${tr('sample_name')} 🙏', maxLines: 2, style: const TextStyle(color: Color(0xFF0F2440), fontSize: 23, height: 1.15, fontWeight: FontWeight.w800))),
-    _HeaderIcon(icon: Icons.notifications_none_rounded, dot: true),
+    const _HeaderIcon(icon: Icons.notifications_none_rounded, dot: true),
     const SizedBox(width: 10),
     Container(width: 57, height: 57, padding: const EdgeInsets.all(3), decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white, boxShadow: [BoxShadow(color: Color(0x150F2440), blurRadius: 10)]), child: const CircleAvatar(backgroundColor: Color(0xFF173D72), child: Icon(Icons.person_rounded, color: Colors.white, size: 31))),
   ]);
