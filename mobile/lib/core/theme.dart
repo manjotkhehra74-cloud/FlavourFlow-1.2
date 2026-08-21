@@ -16,7 +16,7 @@ abstract final class HRMateTheme {
       colorScheme: scheme,
       textTheme: Typography.material2021().black.apply(fontSizeFactor: textScale),
       appBarTheme: const AppBarTheme(centerTitle: false),
-      cardTheme: CardThemeData(clipBehavior: Clip.antiAlias, elevation: 0),
+      cardTheme: const CardThemeData(clipBehavior: Clip.antiAlias, elevation: 0),
     );
   }
 }

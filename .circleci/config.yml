@@ -37,6 +37,8 @@ jobs:
             cd mobile
             # Regenerates any missing platform wrapper files without touching lib/.
             flutter create --platforms=android --org com.gdfoods .
+            # flutter create may generate its stock MyApp widget test; this project has i18n_test.dart instead.
+            rm -f test/widget_test.dart
             printf '\norg.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError\norg.gradle.workers.max=2\nkotlin.daemon.jvmargs=-Xmx512m\n' >> android/gradle.properties
             flutter pub get
       - run:
