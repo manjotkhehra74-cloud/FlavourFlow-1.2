@@ -10,18 +10,13 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  app_settings: ^5.1.1
-  local_auth: ^2.3.0
-  flutter_local_notifications: ^17.2.2
-  geolocator: ^12.0.0
-  image_picker: ^1.1.2
-  google_mlkit_barcode_scanning: ^0.12.0
+  # Native device plugins (GPS, camera/selfie, biometric, notifications,
+  # QR and native export) are added with their actual Phase 1 screens.
+  # Keeping this initial APK dependency-light makes its Android baseline reliable.
   shared_preferences: ^2.3.2
   http: ^1.2.2
   intl: ^0.19.0
   pdf: ^3.11.1
-  printing: ^5.13.2
-  path_provider: ^2.1.4
 
 dev_dependencies:
   flutter_test:
