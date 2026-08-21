@@ -45,6 +45,7 @@ jobs:
             rm -rf android
             flutter create --platforms=android --org com.gdfoods .
             rm -f test/widget_test.dart
+            python3 tools/prepare_android.py
             printf '\norg.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError\norg.gradle.workers.max=2\nkotlin.daemon.jvmargs=-Xmx512m\n' >> android/gradle.properties
             flutter pub get
       - run:
