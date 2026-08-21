@@ -37,11 +37,7 @@ jobs:
             cd mobile
             # Regenerates any missing platform wrapper files without touching lib/.
             flutter create --platforms=android --org com.gdfoods .
-            cat >> android/gradle.properties <<'PROPS'
-            org.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError
-            org.gradle.workers.max=2
-            kotlin.daemon.jvmargs=-Xmx512m
-            PROPS
+            printf '\norg.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError\norg.gradle.workers.max=2\nkotlin.daemon.jvmargs=-Xmx512m\n' >> android/gradle.properties
             flutter pub get
       - run:
           name: Keep CircleCI output alive
