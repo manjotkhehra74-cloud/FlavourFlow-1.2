@@ -14,19 +14,23 @@ jobs:
             - hrmate-pub-v1-
       - restore_cache:
           keys:
-            - hrmate-gradle-v1-{{ checksum "mobile/pubspec.yaml" }}
-            - hrmate-gradle-v1-
+            - hrmate-gradle-v2-{{ checksum "mobile/pubspec.yaml" }}
+            - hrmate-gradle-v2-
       - run:
           name: Install Android native build tools
           command: |
             sudo apt-get update
             sudo apt-get install -y ninja-build cmake
+            yes | sdkmanager --licenses || true
+            sdkmanager "platforms;android-35" "build-tools;35.0.0"
       - run:
           name: Install Flutter SDK
           command: |
-            # Pin Flutter: builds must not change when the moving stable channel changes.
+            # Pin one current Flutter commit, compatible with the current plugin set.
+            # Do not use the moving stable channel on future builds.
             if [ ! -d "$HOME/flutter/.git" ]; then
-              git clone --depth 1 --branch 3.24.5 https://github.com/flutter/flutter.git "$HOME/flutter"
+              git clone --depth 1 --branch stable https://github.com/flutter/flutter.git "$HOME/flutter"
+              git -C "$HOME/flutter" checkout --detach 6655482ec06e547f90abf8ae7590466f4415978d
             fi
             echo 'export PATH="$HOME/flutter/bin:$PATH"' >> "$BASH_ENV"
             source "$BASH_ENV"
@@ -61,7 +65,7 @@ jobs:
           paths:
             - ~/.pub-cache
       - save_cache:
-          key: hrmate-gradle-v1-{{ checksum "mobile/pubspec.yaml" }}
+          key: hrmate-gradle-v2-{{ checksum "mobile/pubspec.yaml" }}
           paths:
             - ~/.gradle/caches
             - ~/.gradle/wrapper
