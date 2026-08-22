@@ -14,40 +14,17 @@ export async function render(root, context) {
 
   const { user } = context;
   const counts = data.todayCounts;
-  const stats = [];
-  if (counts) {
-    stats.push(
-      { label: 'Present today', value: counts.present, tone: 'green', iconName: 'employees', foot: `${counts.headcount} active employees` },
-      { label: 'Late', value: counts.late, tone: 'amber', iconName: 'clock', foot: 'After 9:10 AM punch-in' },
-      { label: 'Absent', value: counts.absent, tone: 'red', iconName: 'close', foot: `${counts.notMarked} not marked yet` },
-    );
-  }
-  if (data.pendingLeaves !== undefined) {
-    stats.push({ label: 'Leave approvals', value: data.pendingLeaves, tone: 'violet', iconName: 'leave', foot: 'Waiting on your review' });
-  }
-  if (!counts && data.myBalance) {
-    const { casual, sick, earned } = data.myBalance;
-    stats.push(
-      { label: 'Casual leave', value: casual, tone: 'blue', iconName: 'leave', foot: 'Balance remaining' },
-      { label: 'Sick leave', value: sick, tone: 'amber', iconName: 'leave', foot: 'Balance remaining' },
-      { label: 'Earned leave', value: earned, tone: 'green', iconName: 'leave', foot: 'Balance remaining' },
-    );
-  }
 
   const quickLinks = [
-    { route: 'attendance', label: 'Attendance', hint: 'View register', iconName: 'attendance', tone: 'blue', perm: 'attendance.view' },
-    { route: 'leave', label: 'Leave', hint: 'Apply or approve', iconName: 'leave', tone: 'green', perm: 'leave.view' },
-    { route: 'employees', label: 'Employees', hint: 'Team directory', iconName: 'employees', tone: 'violet', perm: 'employees.view' },
-    { route: 'reports', label: 'Reports', hint: 'Insights & exports', iconName: 'reports', tone: 'amber', perm: 'reports.view' },
+    { route: 'attendance', label: 'Attendance', hint: 'View history', iconName: 'attendance', tone: 'blue', perm: 'attendance.view' },
+    { route: 'leave', label: 'Apply leave', hint: 'Request time off', iconName: 'leave', tone: 'green', perm: 'leave.view' },
+    { route: 'employees', label: 'My team', hint: 'Team overview', iconName: 'employees', tone: 'violet', perm: 'employees.view' },
+    { route: 'reports', label: 'Reports', hint: 'Insights & stats', iconName: 'reports', tone: 'amber', perm: 'reports.view' },
   ].filter((link) => can(user.role, link.perm));
 
   root.innerHTML = `
-    ${punchCard(data)}
-    ${stats.length ? `<div class="grid grid--stats">${stats.map(statCard).join('')}</div>` : ''}
-    <div class="grid grid--2">
-      ${data.trend ? trendCard(data.trend) : leaveBalanceCard(data.myBalance)}
-      ${data.departments ? departmentCard(data.departments) : myRecentCard(data)}
-    </div>
+    ${punchCard(data, user)}
+    ${counts ? teamCounters(counts, data.trend, data.pendingLeaves) : myCounters(data)}
     <section class="card">
       <div class="card__head"><h3>Your workspace</h3></div>
       <div class="quick">${quickLinks.map((link) => `
@@ -58,71 +35,111 @@ export async function render(root, context) {
         </a>`).join('')}
       </div>
     </section>
-    ${data.recentActivity?.length ? `<section class="card">
-      <div class="card__head"><h3>Recent activity</h3><span class="pill pill--info spacer">Audit log</span></div>
-      <div class="timeline">${data.recentActivity.map((item) => `
-        <div class="timeline__item">
-          <span class="timeline__dot"></span>
-          <div>
-            <strong class="small">${esc(titleCase(item.action.replaceAll('.', ' ')))}</strong>
-            <small> · ${esc(item.actor || 'System')} · ${esc(relativeTime(item.created_at))}</small>
-          </div>
-        </div>`).join('')}
-      </div>
-    </section>` : ''}
-  `;
+    <div class="grid grid--2">
+      ${data.trend ? trendCard(data.trend) : leaveBalanceCard(data.myBalance)}
+      ${data.departments ? departmentCard(data.departments) : myTodayCard(data)}
+    </div>
+    ${data.recentActivity?.length ? activityCard(data.recentActivity) : ''}`;
 
-  wirePunch(root, data, context);
+  wirePunch(root, context);
+}
 
-  function punchCard(payload) {
-    const record = payload.myAttendance;
-    const name = user.name.split(' ')[0];
-    if (!payload.employee) {
-      return `<section class="card punch">
-        <div class="punch__info">
-          <p class="muted small">${esc(formatDate(payload.today, { weekday: 'long', day: 'numeric', month: 'long' }))}</p>
-          <h2>${esc(greeting())}, ${esc(name)} 🙏</h2>
-          <p class="muted">Your account is not linked to an employee profile yet, so punching is disabled. You can still manage the team below.</p>
-        </div>
-      </section>`;
-    }
-    const state = !record?.punch_in_at ? 'in' : (!record.punch_out_at ? 'out' : 'done');
-    const headline = { in: 'Ready to punch in', out: 'You are punched in', done: 'Day complete' }[state];
-    const sub = { in: "Let's make it a productive day!", out: 'Remember to punch out before you leave.', done: 'Thanks for the good work today.' }[state];
+function punchCard(data, user) {
+  const name = user.name.split(' ')[0];
+  const dateLine = formatDate(data.today, { weekday: 'long', day: 'numeric', month: 'long' });
+
+  if (!data.employee) {
     return `<section class="card punch">
       <div class="punch__info">
-        <p class="muted small">${icon('attendance', 14)} ${esc(formatDate(payload.today, { weekday: 'long', day: 'numeric', month: 'long' }))}</p>
-        <h2>${esc(headline)}</h2>
-        <p class="muted">${esc(sub)}</p>
-        <div class="punch__badges">
-          <span class="pill pill--ok">${icon('pin', 13)} GPS verified</span>
-          <span class="pill pill--info">${icon('employees', 13)} Selfie optional</span>
-          ${record?.status ? statusPill(record.status) : ''}
-        </div>
-        <div class="punch__times">
-          <div><small>Punch in</small><strong>${esc(formatTime(record?.punch_in_at))}</strong></div>
-          <div><small>Punch out</small><strong>${esc(formatTime(record?.punch_out_at))}</strong></div>
-        </div>
-      </div>
-      <div class="punch__action">
-        <button class="punch__btn" data-punch="${state}" ${state === 'done' ? 'disabled' : ''}>
-          ${icon('finger', 42)}
-          <span>${state === 'in' ? 'PUNCH IN' : state === 'out' ? 'PUNCH OUT' : 'ALL DONE'}</span>
-        </button>
-        <small class="muted">${state === 'done' ? 'See you tomorrow' : 'Tap to record'}</small>
+        <p class="muted small">${icon('attendance', 14)} ${esc(dateLine)}</p>
+        <h2>${esc(greeting())}, ${esc(name)} 🙏</h2>
+        <p class="muted">Your account is not linked to an employee profile yet, so punching is disabled. You can still manage the team below.</p>
       </div>
     </section>`;
   }
+
+  const record = data.myAttendance;
+  const state = !record?.punch_in_at ? 'in' : (!record.punch_out_at ? 'out' : 'done');
+  const headline = { in: 'Ready to punch in', out: 'You are punched in', done: 'Day complete' }[state];
+  const sub = { in: "Let's make it a productive day!", out: 'Remember to punch out before you leave.', done: 'Thanks for the good work today.' }[state];
+
+  return `<section class="card punch">
+    <div class="punch__info">
+      <p class="muted small">${icon('attendance', 14)} ${esc(dateLine)}</p>
+      <h2>${esc(headline)}</h2>
+      <p class="muted">${esc(sub)}</p>
+      <div class="punch__badges">
+        <span class="pill pill--ok">${icon('pin', 13)} GPS verified</span>
+        <span class="pill pill--info">${icon('employees', 13)} Selfie optional</span>
+        ${record?.status ? statusPill(record.status) : ''}
+      </div>
+      <div class="punch__times">
+        <div><small>Punch in</small><strong>${esc(formatTime(record?.punch_in_at))}</strong></div>
+        <div><small>Punch out</small><strong>${esc(formatTime(record?.punch_out_at))}</strong></div>
+      </div>
+    </div>
+    <div class="punch__action">
+      <button class="punch__btn" data-punch="${state}" ${state === 'done' ? 'disabled' : ''}>
+        ${icon('finger', 42)}
+        <span>${state === 'in' ? 'PUNCH IN' : state === 'out' ? 'PUNCH OUT' : 'ALL DONE'}</span>
+      </button>
+      <small class="muted">${state === 'done' ? 'See you tomorrow' : 'Tap to record'}</small>
+    </div>
+  </section>`;
 }
 
-const statCard = (stat) => `<article class="card stat">
-  <div class="stat__top">
-    <span class="stat__icon tone-${stat.tone}">${icon(stat.iconName)}</span>
-    <span class="stat__label">${esc(stat.label)}</span>
-  </div>
-  <div class="stat__value">${esc(stat.value ?? 0)}</div>
-  <div class="stat__foot">${esc(stat.foot)}</div>
-</article>`;
+/** Present / Leave / Late counters with a week-on-week delta, as in the approved design. */
+function teamCounters(counts, trend = [], pendingLeaves) {
+  const week = trend.slice(-7);
+  const previous = trend.slice(-14, -7);
+  const sum = (rows, key) => rows.reduce((total, row) => total + (row[key] ?? 0), 0);
+  const presentDelta = sum(week, 'present') - sum(previous, 'present');
+  const absentDelta = sum(week, 'absent') - sum(previous, 'absent');
+
+  const tiles = [
+    { label: 'Present', value: counts.present + counts.half_day, tone: 'green', iconName: 'employees', delta: presentDelta, deltaLabel: 'this week' },
+    { label: 'Leave', value: pendingLeaves ?? counts.notMarked, tone: 'amber', iconName: 'leave', delta: null, deltaLabel: pendingLeaves === undefined ? 'not marked yet' : 'awaiting approval' },
+    { label: 'Late', value: counts.late, tone: 'red', iconName: 'clock', delta: absentDelta, deltaLabel: 'absences this week' },
+  ];
+
+  return `<section class="card card--flat" style="background:#eff4fb;border-color:#e2ebf7">
+    <div class="hero__tiles" style="margin:0">
+      ${tiles.map((tile) => `<article class="hero__tile">
+        <div class="row" style="gap:9px;flex-wrap:nowrap">
+          <span class="stat__icon tone-${tile.tone}">${icon(tile.iconName)}</span>
+          <small style="margin:0">${esc(tile.label)}</small>
+        </div>
+        <strong style="color:${tile.tone === 'green' ? '#16a34a' : tile.tone === 'amber' ? 'var(--amber)' : 'var(--red)'}">${String(tile.value ?? 0).padStart(2, '0')}</strong>
+        <span class="hero__delta muted">
+          ${tile.delta === null ? '' : icon(tile.delta >= 0 ? 'trendUp' : 'trendDown', 14)}
+          ${tile.delta === null ? '' : `<b style="color:${tile.delta >= 0 ? '#16a34a' : 'var(--red)'}">${tile.delta >= 0 ? '+' : ''}${tile.delta}</b>`}
+          ${esc(tile.deltaLabel)}
+        </span>
+      </article>`).join('')}
+    </div>
+  </section>`;
+}
+
+function myCounters(data) {
+  const balance = data.myBalance;
+  if (!balance) return '';
+  const tiles = [
+    ['Casual leave', balance.casual, 'blue', 'umbrella'],
+    ['Sick leave', balance.sick, 'green', 'heart'],
+    ['Earned leave', balance.earned, 'violet', 'attendance'],
+  ];
+  return `<section class="hero">
+    <div class="hero__label">Leave balance</div>
+    <h3 style="margin-top:2px">Track your available leave</h3>
+    <div class="hero__tiles">
+      ${tiles.map(([label, value, tone, glyph]) => `<article class="hero__tile">
+        <span class="stat__icon tone-${tone}">${icon(glyph)}</span>
+        <small>${label}</small>
+        <strong>${esc(value ?? 0)}<span>days</span></strong>
+      </article>`).join('')}
+    </div>
+  </section>`;
+}
 
 function trendCard(trend) {
   if (!trend.length) return `<section class="card">${emptyState('No attendance recorded yet', 'Punches will appear here once the team starts marking attendance.')}</section>`;
@@ -164,7 +181,7 @@ function leaveBalanceCard(balance) {
   if (!balance) return `<section class="card">${emptyState('No leave balance yet', 'HR will set your opening balance.')}</section>`;
   const rows = [['Casual', balance.casual, 7], ['Sick', balance.sick, 5], ['Earned', balance.earned, 12]];
   return `<section class="card">
-    <div class="card__head"><h3>Leave balance</h3></div>
+    <div class="card__head"><h3>Leave balance</h3><a class="small spacer" href="#/leave">Apply</a></div>
     <div class="stack">${rows.map(([label, value, total]) => `
       <div>
         <div class="row" style="justify-content:space-between">
@@ -176,9 +193,9 @@ function leaveBalanceCard(balance) {
   </section>`;
 }
 
-function myRecentCard(data) {
+function myTodayCard(data) {
   return `<section class="card">
-    <div class="card__head"><h3>Today</h3></div>
+    <div class="card__head"><h3>Today</h3><a class="small spacer" href="#/attendance">History</a></div>
     <div class="row">
       ${avatar(data.employee?.name || 'HRMate', data.employee?.photo_url, 'avatar--lg')}
       <div>
@@ -190,7 +207,20 @@ function myRecentCard(data) {
   </section>`;
 }
 
-function wirePunch(root, data, context) {
+const activityCard = (items) => `<section class="card">
+  <div class="card__head"><h3>Recent activity</h3><span class="pill pill--info spacer">Audit log</span></div>
+  <div class="timeline">${items.map((item) => `
+    <div class="timeline__item">
+      <span class="timeline__dot"></span>
+      <div>
+        <strong class="small">${esc(titleCase(item.action.replaceAll('.', ' ')))}</strong>
+        <small> · ${esc(item.actor || 'System')} · ${esc(relativeTime(item.created_at))}</small>
+      </div>
+    </div>`).join('')}
+  </div>
+</section>`;
+
+function wirePunch(root, context) {
   const button = qs('[data-punch]', root);
   if (!button) return;
   button.addEventListener('click', async () => {

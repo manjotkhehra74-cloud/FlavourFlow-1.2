@@ -31,6 +31,37 @@ router.post('/', requirePerm('leave.view'), audit({
 
 router.get('/pending', requirePerm('leave.manage'), (req, res) => res.json(db.prepare(`SELECT l.*, e.name, e.employee_code, e.department FROM leaves l JOIN employees e ON e.id=l.employee_id WHERE l.status='pending' ORDER BY l.created_at`).all()));
 
+/** Approvals workspace: one status at a time, with the counters for every tab. */
+router.get('/', requirePerm('leave.manage'), (req, res) => {
+  const status = ['pending', 'approved', 'rejected'].includes(req.query.status) ? req.query.status : 'pending';
+  const requests = db.prepare(`SELECT l.*, e.name, e.employee_code, e.department, e.photo_url,
+      b.casual, b.sick, b.earned, r.name AS reviewer_name
+    FROM leaves l
+    JOIN employees e ON e.id = l.employee_id
+    LEFT JOIN leave_balances b ON b.employee_id = e.id
+    LEFT JOIN users r ON r.id = l.reviewer_id
+    WHERE l.status = ?
+    ORDER BY CASE WHEN l.status = 'pending' THEN l.created_at END ASC, l.reviewed_at DESC, l.id DESC
+    LIMIT 200`).all(status);
+
+  const counts = Object.fromEntries(db.prepare('SELECT status, COUNT(*) AS count FROM leaves GROUP BY status').all().map((row) => [row.status, row.count]));
+  res.json({
+    status,
+    requests,
+    counts: { pending: counts.pending ?? 0, approved: counts.approved ?? 0, rejected: counts.rejected ?? 0 },
+  });
+});
+
+/** Everything approved that overlaps a month, for the team leave calendar. */
+router.get('/calendar', requirePerm('leave.manage'), (req, res) => {
+  const month = /^\d{4}-\d{2}$/.test(req.query.month ?? '') ? req.query.month : new Date(Date.now() + 330 * 60000).toISOString().slice(0, 7);
+  const requests = db.prepare(`SELECT l.id, l.employee_id, l.leave_type, l.start_date, l.end_date, l.days, l.status, e.name, e.department
+    FROM leaves l JOIN employees e ON e.id = l.employee_id
+    WHERE l.status IN ('approved','pending') AND l.start_date <= ? AND l.end_date >= ?
+    ORDER BY l.start_date`).all(`${month}-31`, `${month}-01`);
+  res.json({ month, requests });
+});
+
 router.post('/:id/review', requirePerm('leave.manage'), audit({
   action: 'leave.reviewed', entityType: 'leave', entityId: (req) => req.params.id,
   title: 'Leave request reviewed', body: 'A leave request was reviewed.',

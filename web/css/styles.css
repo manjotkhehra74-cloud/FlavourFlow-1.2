@@ -335,3 +335,178 @@ tbody tr.clickable:hover { background: #f8fafc; }
   .punch__btn { width: 108px; height: 108px; }
   .stat__value { font-size: 26px; }
 }
+
+/* ==========================================================================
+   Approved mobile design language — see design/ui-specification.md
+   ========================================================================== */
+
+.gradient { background: linear-gradient(115deg, var(--blue) 0%, #1d8ad2 48%, var(--green) 100%); }
+
+/* Hero card: white text on the brand gradient. */
+.hero {
+  position: relative; overflow: hidden; border-radius: 20px; padding: 20px;
+  background: linear-gradient(115deg, var(--blue) 0%, #1d8ad2 48%, var(--green) 100%);
+  color: #fff; box-shadow: 0 12px 30px rgba(30, 111, 224, 0.22);
+}
+.hero::after {
+  content: ""; position: absolute; right: -70px; bottom: -110px; width: 240px; height: 240px;
+  border-radius: 50%; background: rgba(255, 255, 255, 0.1);
+}
+.hero > * { position: relative; z-index: 1; }
+.hero h2, .hero h3 { color: #fff; }
+.hero__label { font-size: 13px; opacity: 0.85; font-weight: 500; }
+.hero__value { font-size: 42px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+.hero__tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-top: 16px; }
+.hero__tile { background: #fff; border-radius: 15px; padding: 13px; color: var(--ink); }
+.hero__tile .stat__icon { width: 34px; height: 34px; margin-bottom: 8px; }
+.hero__tile small { display: block; color: var(--muted); font-size: 12.5px; font-weight: 600; }
+.hero__tile strong { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+.hero__tile strong span { font-size: 13px; font-weight: 600; color: var(--muted); margin-left: 3px; }
+.hero__delta { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 600; }
+
+/* Full-width gradient call to action. */
+.btn--gradient {
+  background: linear-gradient(100deg, var(--blue), var(--green)); border: 0;
+  box-shadow: 0 8px 22px rgba(30, 111, 224, 0.26); color: #fff;
+}
+.btn--gradient:disabled { background: #cbd5e1; box-shadow: none; }
+
+/* Pill filters. */
+.chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  flex: none; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink-2); font-size: 13.5px; font-weight: 600; cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.chip:hover { border-color: #cbd5e1; }
+.chip.is-active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+/* Present / Half day / Absent style switch. */
+.segmented { display: flex; border: 1px solid var(--line); border-radius: 13px; overflow: hidden; background: var(--surface); }
+.segmented button {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 11px 8px; border: 0; background: transparent; cursor: pointer;
+  font-size: 13.5px; font-weight: 600; color: var(--ink-2); border-right: 1px solid var(--line);
+}
+.segmented button:last-child { border-right: 0; }
+.segmented button svg { width: 16px; height: 16px; }
+.segmented button.is-active { background: var(--blue); color: #fff; }
+.segmented button.is-active[data-tone="amber"] { background: var(--amber); }
+.segmented button.is-active[data-tone="red"] { background: var(--red); }
+
+/* Status counters (Pending / Approved / Rejected / Calendar). */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 12px; }
+.tile {
+  display: grid; gap: 6px; padding: 14px; border-radius: 16px; border: 1px solid var(--line);
+  background: var(--surface); cursor: pointer; text-align: left; transition: border-color 0.15s, background 0.15s;
+}
+.tile:hover { border-color: #cbd5e1; }
+.tile.is-active { border-color: var(--blue); background: var(--blue-soft); }
+.tile__icon { width: 32px; height: 32px; border-radius: 11px; display: grid; place-content: center; }
+.tile__icon svg { width: 17px; height: 17px; }
+.tile small { color: var(--muted); font-size: 12.5px; font-weight: 600; }
+.tile strong { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+
+/* Week strip with an attendance dot per day. */
+.week {
+  display: grid; grid-template-columns: auto repeat(7, 1fr) auto; gap: 4px; align-items: center;
+}
+.week__nav {
+  width: 34px; height: 34px; border-radius: 11px; border: 1px solid var(--line); background: var(--surface);
+  cursor: pointer; display: grid; place-content: center;
+}
+.week__nav:hover { background: #f8fafc; }
+.week__nav svg { width: 16px; height: 16px; }
+.week__day {
+  display: grid; justify-items: center; gap: 5px; padding: 8px 2px; border-radius: 14px;
+  border: 0; background: transparent; cursor: pointer; transition: background 0.15s;
+}
+.week__day:hover { background: #f1f5fb; }
+.week__day small { font-size: 10.5px; font-weight: 700; color: var(--muted); letter-spacing: 0.04em; }
+.week__day strong { font-size: 16px; font-weight: 700; }
+.week__day i { width: 7px; height: 7px; border-radius: 50%; background: #cbd5e1; display: block; }
+.week__day.is-selected { background: var(--blue); }
+.week__day.is-selected small, .week__day.is-selected strong { color: #fff; }
+.week__day.is-selected i { background: #fff; }
+.week__day[data-status="present"] i { background: var(--green); }
+.week__day[data-status="late"] i { background: var(--amber); }
+.week__day[data-status="half_day"] i { background: var(--amber); }
+.week__day[data-status="absent"] i { background: var(--red); }
+.week__day.is-future { opacity: 0.45; cursor: default; }
+.week__title { text-align: center; font-weight: 700; font-size: 14.5px; }
+
+/* Punch in → punch out timeline. */
+.punchline { display: grid; gap: 0; }
+.punchline__row { display: flex; align-items: center; gap: 14px; }
+.punchline__icon { width: 46px; height: 46px; border-radius: 50%; display: grid; place-content: center; flex: none; }
+.punchline__icon svg { width: 21px; height: 21px; }
+.punchline__row small { display: block; font-size: 13px; font-weight: 600; color: var(--muted); }
+.punchline__row strong { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+.punchline__row.is-done small { color: #15803d; }
+.punchline__row.is-done strong { color: #15803d; }
+.punchline__link { display: flex; align-items: center; gap: 14px; height: 26px; }
+.punchline__link span { width: 46px; display: grid; place-content: center; }
+.punchline__link i { width: 2px; height: 26px; background: var(--line); display: block; }
+.punchline__link em {
+  width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--green);
+  background: #fff; display: block; margin-left: 18px; position: absolute;
+}
+.punchline__meta { display: flex; align-items: center; gap: 12px; padding-top: 14px; border-top: 1px solid #f1f5f9; margin-top: 14px; }
+.punchline__selfie { width: 58px; height: 58px; border-radius: 13px; background: #f1f5f9; position: relative; overflow: hidden; flex: none; }
+.punchline__selfie img { width: 100%; height: 100%; object-fit: cover; }
+.punchline__selfie b {
+  position: absolute; right: -3px; bottom: -3px; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--green); color: #fff; display: grid; place-content: center; border: 2px solid #fff;
+}
+.punchline__selfie b svg { width: 11px; height: 11px; }
+
+/* Month summary strip: 18 Present · 2 Late · 1 Half day · 0 Absent */
+.summary { display: grid; grid-template-columns: repeat(4, 1fr); }
+.summary div { text-align: center; padding: 4px; border-right: 1px solid var(--line); }
+.summary div:last-child { border-right: 0; }
+.summary strong { display: block; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+.summary small { color: var(--muted); font-size: 12.5px; font-weight: 600; }
+.summary .t-green { color: #16a34a; }
+.summary .t-amber { color: var(--amber); }
+.summary .t-blue { color: var(--blue); }
+.summary .t-grey { color: var(--muted); }
+
+/* Request / list card used by approvals and directories. */
+.list-card {
+  border: 1px solid var(--line); border-radius: 16px; padding: 14px; background: var(--surface);
+  display: grid; gap: 12px;
+}
+.list-card__top { display: flex; align-items: flex-start; gap: 12px; }
+.list-card__top .avatar { width: 46px; height: 46px; }
+.list-card__body { flex: 1; min-width: 0; }
+.list-card__body strong { font-size: 15.5px; display: block; }
+.list-card__body .type { color: var(--blue); font-weight: 600; font-size: 13.5px; }
+.list-card__body .meta { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+.list-card__badge {
+  background: var(--green-soft); border-radius: 12px; padding: 8px 11px; text-align: center; flex: none;
+}
+.list-card__badge small { display: block; color: #15803d; font-size: 11px; font-weight: 600; }
+.list-card__badge strong { color: #15803d; font-size: 14px; }
+.list-card__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
+.btn--outline { background: var(--surface); border: 1px solid var(--blue); color: var(--blue); }
+.btn--outline:hover { background: var(--blue-soft); }
+.btn--solid-green { background: #16a34a; }
+
+/* Row with an icon tile, used by leave history and notifications. */
+.rowcard {
+  display: flex; align-items: center; gap: 12px; padding: 13px; border-radius: 15px;
+  border: 1px solid var(--line); background: var(--surface);
+}
+.rowcard__icon { width: 42px; height: 42px; border-radius: 13px; display: grid; place-content: center; flex: none; }
+.rowcard__icon svg { width: 19px; height: 19px; }
+.rowcard__body { flex: 1; min-width: 0; }
+.rowcard__body strong { display: block; font-size: 14.5px; }
+.rowcard__body small { color: var(--muted); font-size: 12.5px; }
+
+@media (max-width: 620px) {
+  .hero__value { font-size: 34px; }
+  .summary strong { font-size: 22px; }
+  .punchline__row strong { font-size: 19px; }
+  .list-card__actions { grid-template-columns: 1fr; }
+}

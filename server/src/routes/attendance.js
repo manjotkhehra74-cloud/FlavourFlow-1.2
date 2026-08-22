@@ -6,6 +6,8 @@ import { audit } from '../helpers.js';
 const router = Router();
 router.use(authRequired);
 
+const emptySummary = () => ({ present: 0, late: 0, half_day: 0, absent: 0 });
+
 function attendanceStatus(now = new Date()) {
   const ist = new Date(now.getTime() + 330 * 60000);
   const minutes = ist.getUTCHours() * 60 + ist.getUTCMinutes();
@@ -14,9 +16,19 @@ function attendanceStatus(now = new Date()) {
 
 router.get('/me', requirePerm('attendance.view'), (req, res) => {
   const employee = employeeForUser(req.user.id);
-  if (!employee) return res.json({ employee: null, records: [] });
-  const records = db.prepare('SELECT * FROM attendance WHERE employee_id = ? ORDER BY attendance_date DESC LIMIT 31').all(employee.id);
-  res.json({ employee, records });
+  const month = /^\d{4}-\d{2}$/.test(req.query.month ?? '') ? req.query.month : todayIst().slice(0, 7);
+  if (!employee) return res.json({ employee: null, month, records: [], summary: emptySummary(), today: null });
+
+  const records = db.prepare('SELECT * FROM attendance WHERE employee_id = ? AND attendance_date LIKE ? ORDER BY attendance_date DESC').all(employee.id, `${month}%`);
+  const summary = { ...emptySummary() };
+  records.forEach((record) => { summary[record.status] = (summary[record.status] ?? 0) + 1; });
+  res.json({
+    employee,
+    month,
+    records,
+    summary,
+    today: records.find((record) => record.attendance_date === todayIst()) ?? null,
+  });
 });
 
 router.get('/register', requirePerm('attendance.view'), (req, res) => {
