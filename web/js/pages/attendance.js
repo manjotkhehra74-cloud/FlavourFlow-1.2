@@ -90,7 +90,7 @@ export async function render(root, context) {
           </div>
           <div class="punchline__link"><span><i></i></span></div>
           <div class="punchline__row ${record?.punch_out_at ? 'is-done' : ''}">
-            <span class="punchline__icon ${record?.punch_out_at ? 'tone-green' : 'tone-blue'}" style="${record?.punch_out_at ? '' : 'background:#f1f5f9;color:var(--muted)'}">${icon('signOut', 21)}</span>
+            <span class="punchline__icon ${record?.punch_out_at ? 'tone-green' : 'punchline__icon--idle'}">${icon('signOut', 21)}</span>
             <div><small>${record?.punch_out_at ? 'Punched out' : t('Punch out')}</small><strong>${esc(formatTime(record?.punch_out_at))}</strong></div>
           </div>
         </div>

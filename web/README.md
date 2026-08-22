@@ -92,3 +92,22 @@ text size sets the body font size.
 A red sticky bar appears when the browser goes offline and clears itself with a toast when
 the connection returns. A failed `fetch` reports "Could not reach the server" rather than a
 raw `TypeError`.
+
+## Browser test harness
+
+`web/tests/` boots the console inside JSDOM against a running dev server and drives it the
+way a person would. JSDOM cannot execute `<script type="module">`, so `harness.mjs`
+supplies the DOM, points relative `fetch` calls at the server and imports `js/app.js`
+directly.
+
+```sh
+cd server && npm install --no-save --ignore-scripts jsdom
+cd server && DATABASE_PATH=./data/demo.sqlite node tools/seed-demo.js
+cd server && DATABASE_PATH=./data/demo.sqlite PORT=3101 node src/index.js &
+
+node web/tests/sweep.mjs +919000000001 pa dark   # every route renders, no thrown errors
+node web/tests/shell.mjs +919000000001 pa dark   # app bar, search, tab bar, filters
+```
+
+Arguments are `<phone> <language> <appearance>`. Filter the noisy JSDOM warnings with
+`| grep -v "Not implemented"`.

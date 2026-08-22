@@ -76,7 +76,7 @@ export async function render(root, context) {
 
     if (!items.length) {
       body.innerHTML = `<section class="card">${emptyState(
-        state.filter === 'unread' ? 'You are all caught up' : 'Nothing here yet',
+        state.filter === 'unread' ? t('You are all caught up') : t('Nothing here yet'),
         t('Announcements, leave decisions and audit alerts land on this screen.'),
       )}</section>`;
       return;

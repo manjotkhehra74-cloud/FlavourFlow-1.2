@@ -181,7 +181,7 @@ export async function render(root, context) {
             const entries = onDay(day);
             const approved = entries.filter((entry) => entry.status === 'approved').length;
             const pending = entries.length - approved;
-            return `<div style="border:1px solid var(--line);border-radius:11px;padding:7px 6px;min-height:62px;background:${entries.length ? '#f8fbff' : 'var(--surface)'}"
+            return `<div style="border:1px solid var(--line);border-radius:11px;padding:7px 6px;min-height:62px;background:${entries.length ? 'var(--blue-soft)' : 'var(--surface)'}"
               title="${esc(entries.map((entry) => `${entry.name} (${entry.leave_type})`).join(', ') || t('No leave'))}">
               <div class="small" style="font-weight:700">${day}</div>
               ${approved ? `<span class="pill pill--approved" style="padding:1px 7px;font-size:11px;margin-top:4px">${approved}</span>` : ''}

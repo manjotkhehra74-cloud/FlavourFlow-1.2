@@ -460,6 +460,8 @@ const pa = {
   'awaiting approval': 'ਮਨਜ਼ੂਰੀ ਦੀ ਉਡੀਕ',
   'not marked yet': 'ਹਾਲੇ ਦਰਜ ਨਹੀਂ',
   'this week': 'ਇਸ ਹਫ਼ਤੇ',
+  'You are all caught up': 'ਸਭ ਕੁਝ ਵੇਖ ਲਿਆ',
+  'Nothing here yet': 'ਹਾਲੇ ਇੱਥੇ ਕੁਝ ਨਹੀਂ',
 };
 
 const hi = {
@@ -900,6 +902,8 @@ const hi = {
   'awaiting approval': 'अनुमोदन की प्रतीक्षा',
   'not marked yet': 'अभी दर्ज नहीं',
   'this week': 'इस हफ़्ते',
+  'You are all caught up': 'सब कुछ देख लिया',
+  'Nothing here yet': 'अभी यहाँ कुछ नहीं',
 };
 
 const DICTIONARIES = { pa, hi, en: {} };

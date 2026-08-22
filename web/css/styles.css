@@ -838,3 +838,104 @@ input, select, textarea {
 .icon-btn.is-active { background: var(--blue); border-color: var(--blue); color: #fff; }
 
 .spark { display: block; width: 100%; height: 26px; margin-top: 8px; }
+
+/* ==========================================================================
+   Dark theme corrections — anything that hard-codes a light surface
+   ========================================================================== */
+
+.counters { background: #eff4fb; border-color: #e2ebf7; }
+.punchline__icon--idle { background: #f1f5f9; color: var(--muted); }
+
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* form controls: the shared rule paints them #fff, which hides light ink */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: #0e1626; color: var(--ink); border-color: var(--line);
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder { color: var(--muted); }
+[data-theme="dark"] select option { background: #0e1626; color: var(--ink); }
+
+/* punch hero + counter strip were white-on-white */
+[data-theme="dark"] .punch { background: linear-gradient(120deg, #16203a 0%, #121a2b 100%); }
+[data-theme="dark"] .counters { background: #141d31; border-color: #22304a; }
+
+/* gradient hero tiles: a translucent plate reads better than a white card */
+[data-theme="dark"] .hero__tile { background: rgba(255, 255, 255, .13); color: #fff; }
+[data-theme="dark"] .hero__tile small,
+[data-theme="dark"] .hero__tile strong span { color: rgba(255, 255, 255, .82); }
+[data-theme="dark"] .hero__tile strong { color: #fff; }
+[data-theme="dark"] .hero__tile .stat__icon { background: rgba(255, 255, 255, .18); color: #fff; }
+[data-theme="dark"] .hero__delta b { filter: brightness(1.35); }
+
+/* hover and hairline colours */
+[data-theme="dark"] .nav a:hover,
+[data-theme="dark"] .icon-btn:hover,
+[data-theme="dark"] .btn--ghost:hover,
+[data-theme="dark"] .week__nav:hover,
+[data-theme="dark"] .week__day:hover,
+[data-theme="dark"] .rowcard--tap:hover,
+[data-theme="dark"] tbody tr.clickable:hover,
+[data-theme="dark"] .searchbox__row:hover,
+[data-theme="dark"] .menu--account a:hover,
+[data-theme="dark"] .menu--account button:hover { background: #1b2540; }
+[data-theme="dark"] .sidebar__user { background: #172035; }
+[data-theme="dark"] .sidebar__user:hover { background: #1d2942; }
+[data-theme="dark"] .menu--account .menu__danger:hover { background: #3a1a1a; }
+[data-theme="dark"] .rowcard--tap:hover { border-color: #33445f; }
+
+[data-theme="dark"] .pill { background: #1b2438; color: var(--ink-2); }
+[data-theme="dark"] tbody td,
+[data-theme="dark"] .punchline__meta,
+[data-theme="dark"] .list-card__actions { border-color: var(--line); }
+[data-theme="dark"] .progress { background: #1b2438; }
+[data-theme="dark"] .punchline__selfie,
+[data-theme="dark"] .punchline__icon--idle { background: #1b2438; }
+[data-theme="dark"] .punchline__link em,
+[data-theme="dark"] .punchline__selfie b { border-color: var(--surface); }
+[data-theme="dark"] .punchline__link em { background: var(--surface); }
+[data-theme="dark"] .week__day.is-selected i { background: #fff; }
+[data-theme="dark"] .bars__fill--absent { background: #b45454; }
+
+/* the mark keeps its own gradient; stop the global dark image dimming on brand art */
+[data-theme="dark"] .appbar__brand img,
+[data-theme="dark"] .sidebar__brand img,
+[data-theme="dark"] .boot__logo img { filter: none; }
+
+/* Tinted text on tinted plates: the light-mode inks are too dark to read at night. */
+[data-theme="dark"] .tone-blue { color: #7ab0ff; }
+[data-theme="dark"] .tone-green,
+[data-theme="dark"] .pill--present,
+[data-theme="dark"] .pill--approved,
+[data-theme="dark"] .pill--ok,
+[data-theme="dark"] .list-card__badge small,
+[data-theme="dark"] .list-card__badge strong,
+[data-theme="dark"] .summary .t-green { color: #4ade80; }
+[data-theme="dark"] .tone-amber,
+[data-theme="dark"] .pill--late,
+[data-theme="dark"] .pill--pending,
+[data-theme="dark"] .pill--half_day,
+[data-theme="dark"] .pill--soon { color: #fbbf24; }
+[data-theme="dark"] .tone-red,
+[data-theme="dark"] .pill--absent,
+[data-theme="dark"] .pill--rejected { color: #fb8888; }
+[data-theme="dark"] .tone-violet { color: #b39bfb; }
+[data-theme="dark"] .pill--info { color: #7ab0ff; }
+[data-theme="dark"] .summary .t-blue { color: #7ab0ff; }
+[data-theme="dark"] .avatar { color: #9cc4ff; }
+[data-theme="dark"] .tile:hover { border-color: #33445f; }
+[data-theme="dark"] .chart--empty { background: rgba(0, 0, 0, .18); }
+
+/* `.field input` is as specific as the element-level override above — be explicit. */
+[data-theme="dark"] .field input,
+[data-theme="dark"] .field select,
+[data-theme="dark"] .field textarea,
+[data-theme="dark"] .searchbox__field input { background: #0e1626; color: var(--ink); }
+[data-theme="dark"] .searchbox__field input { background: transparent; }
+[data-theme="dark"] .punch__btn:disabled,
+[data-theme="dark"] .btn--gradient:disabled { background: #2a3550; color: var(--muted); }
+[data-theme="dark"] .week__day i { background: #33445f; }

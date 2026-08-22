@@ -120,7 +120,7 @@ function teamCounters(counts, trend = [], pendingLeaves) {
     { label: t('Late'), value: counts.late, tone: 'red', iconName: 'clock', delta: absentDelta, deltaLabel: t('absences this week') },
   ];
 
-  return `<section class="card card--flat" style="background:#eff4fb;border-color:#e2ebf7">
+  return `<section class="card card--flat counters">
     <div class="hero__tiles" style="margin:0">
       ${tiles.map((tile) => `<article class="hero__tile">
         <div class="row" style="gap:9px;flex-wrap:nowrap">
