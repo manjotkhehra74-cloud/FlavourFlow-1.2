@@ -36,7 +36,8 @@ no CORS or proxy setup in development.
 ## Status
 
 - ✅ API, SQLite schema, RBAC, audit log and notifications
-- ✅ Web console: dashboard, attendance, leave, employees, reports, users, notifications
+- ✅ Web console: dashboard, attendance, leave, employees, reports, users, notifications, settings
+- ✅ Self-service password/phone changes, admin resets, and a VPS recovery tool
 - ✅ Live on the GCP VPS behind Caddy with TLS
 - ⏳ Flutter client wiring against the live API
 

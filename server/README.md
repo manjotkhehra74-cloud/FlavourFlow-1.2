@@ -17,6 +17,37 @@ The command is idempotent: once any user exists, it will not make another first 
 
 Never put real credentials in Git, screenshots, or chat.
 
+## Changing or recovering credentials
+
+The phone number is the login id, so both it and the password can be changed without a
+redeploy.
+
+**From the console (normal case).** Every signed-in user has **Settings**, where they can
+change their name, phone, email and password. A super admin or HR manager can also open
+**Users** to edit any account or set a new password for someone who is locked out.
+
+Two rules are enforced by the API and cannot be clicked around:
+
+- you cannot change your own role or disable your own account;
+- HRMate always keeps at least one active `super_admin`.
+
+**From the VPS (everyone is locked out).** `tools/reset-credentials.js` works directly on
+the database, so it needs no password:
+
+```bash
+cd /opt/hrmate/server
+set -a && source /etc/hrmate.env && set +a
+
+node tools/reset-credentials.js --list
+node tools/reset-credentials.js --id 1 --password 'a-new-long-password'
+node tools/reset-credentials.js --id 1 --new-phone '+91XXXXXXXXXX'
+node tools/reset-credentials.js --id 1 --activate
+```
+
+Sign in afterwards and change the password again from **Settings**, so the one typed on a
+shell line does not stay in use. Passwords are never printed by the tool, and the audit log
+redacts every password field.
+
 ## Web console
 
 The API also serves the browser console from the repository's `web/` directory, so

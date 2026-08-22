@@ -1,6 +1,6 @@
 import { db } from './db/index.js';
 
-const SENSITIVE = new Set(['password', 'passwordHash', 'password_hash', 'token']);
+const SENSITIVE = new Set(['password', 'newPassword', 'currentPassword', 'passwordHash', 'password_hash', 'token']);
 /** Keeps secrets such as new-user passwords out of the audit trail. */
 const safeDetails = (body) => JSON.stringify(
   Object.fromEntries(Object.entries(body ?? {}).map(([key, value]) => [key, SENSITIVE.has(key) ? '[redacted]' : value])),

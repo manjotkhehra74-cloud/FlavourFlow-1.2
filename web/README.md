@@ -16,6 +16,11 @@ same origin.
 | `#/reports` | Monthly summary, per-employee rates, CSV export | `reports.view` |
 | `#/users` | Login accounts and roles | `users.view` (`users.manage` to add) |
 | `#/notifications` | Broadcasts and audit alerts | `notifications.view` |
+| `#/settings` | Change your own name, phone (login id) and password | `dashboard.view` |
+
+**Users** also carries account recovery: edit any account, change a role, disable it, or set
+a new password for a locked-out colleague. The API refuses to let anyone change their own
+role, disable their own account, or remove the last active super admin.
 
 Navigation comes from `GET /api/v1/meta/navigation` and is filtered by `js/rbac.js`, a
 mirror of `server/src/rbac.js`. Hiding a control is only a convenience — the API is still

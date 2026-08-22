@@ -16,6 +16,12 @@ curl --fail --silent --show-error "$API_URL/auth/me" -H "Authorization: Bearer $
 curl --fail --silent --show-error "$API_URL/meta/navigation" >/dev/null
 curl --fail --silent --show-error "$API_URL/dashboard" -H "Authorization: Bearer $token" >/dev/null
 
+# Account recovery paths must stay reachable: a wrong current password is rejected, not accepted.
+code="$(curl --silent --output /dev/null --write-out '%{http_code}' -X POST "$API_URL/auth/change-password" \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer $token" \
+  --data '{"currentPassword":"deliberately-wrong","newPassword":"deliberately-wrong-too"}')"
+[ "$code" = "403" ] || { echo "change-password guard returned $code, expected 403"; exit 1; }
+
 # Web console: the SPA shell and its entry script must be served by the same origin.
 console="$(curl --fail --silent --show-error "${API_URL%/api/v1}/")"
 printf '%s' "$console" | grep -q 'id="app"'

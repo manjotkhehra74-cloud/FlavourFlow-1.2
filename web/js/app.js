@@ -1,6 +1,6 @@
 import { api, auth } from './api.js';
 import { ROLE_LABEL, can } from './rbac.js';
-import { avatar, el, esc, icon, qs, toast } from './ui.js';
+import { avatar, el, esc, icon, initials, qs, toast } from './ui.js';
 import { renderLogin } from './pages/login.js';
 import * as dashboard from './pages/dashboard.js';
 import * as attendance from './pages/attendance.js';
@@ -9,12 +9,14 @@ import * as employees from './pages/employees.js';
 import * as reports from './pages/reports.js';
 import * as users from './pages/users.js';
 import * as notifications from './pages/notifications.js';
+import * as settings from './pages/settings.js';
 
-const PAGES = { dashboard, attendance, leave, employees, reports, users, notifications };
+const PAGES = { dashboard, attendance, leave, employees, reports, users, notifications, settings };
 const NAV_ICON = { dashboard: 'dashboard', attendance: 'attendance', leave: 'leave', employees: 'employees', reports: 'reports', users: 'users' };
 const PAGE_PERMISSION = {
   dashboard: 'dashboard.view', attendance: 'attendance.view', leave: 'leave.view',
-  employees: 'employees.view', reports: 'reports.view', users: 'users.view', notifications: 'notifications.view',
+  employees: 'employees.view', reports: 'reports.view', users: 'users.view',
+  notifications: 'notifications.view', settings: 'dashboard.view',
 };
 
 const root = qs('#app');
@@ -56,12 +58,13 @@ async function showShell() {
       <nav class="nav">
         ${visible.map((item) => `<a href="#/${item.key}" data-route="${item.key}">${icon(NAV_ICON[item.key] || 'dashboard')} ${esc(item.label)}</a>`).join('')}
         <a href="#/notifications" data-route="notifications">${icon('bell')} Notifications <span class="nav__badge" data-nav-badge hidden>0</span></a>
+        <a href="#/settings" data-route="settings">${icon('settings')} Settings</a>
       </nav>
       <div class="sidebar__foot">
-        <div class="sidebar__user">
+        <a class="sidebar__user" href="#/settings" title="Account settings">
           ${avatar(state.user.name, null)}
           <div><strong>${esc(state.user.name)}</strong><small>${esc(ROLE_LABEL[state.user.role] || state.user.role)}</small></div>
-        </div>
+        </a>
         <button class="btn btn--ghost btn--block" data-logout>${icon('logout', 17)} Sign out</button>
       </div>
     </aside>
@@ -72,7 +75,8 @@ async function showShell() {
         <div><h1 data-title>Dashboard</h1><small data-subtitle>Today at a glance</small></div>
         <div class="topbar__actions">
           <a class="icon-btn" href="#/notifications" title="Notifications">${icon('bell')}<span class="dot" data-bell-badge hidden>0</span></a>
-          ${avatar(state.user.name, null)}
+          <a class="icon-btn" href="#/settings" title="Settings">${icon('settings')}</a>
+          <a href="#/settings" title="Account settings">${avatar(state.user.name, null)}</a>
         </div>
       </header>
       <div class="content" data-outlet></div>
@@ -89,6 +93,17 @@ async function showShell() {
   state.badgeTimer = setInterval(refreshBadges, 60000);
   await refreshBadges();
   await route();
+}
+
+/** Keeps the sidebar and topbar in step after the user edits their own profile. */
+function updateIdentity(user) {
+  state.user = { ...state.user, ...user };
+  const name = state.user.name;
+  const strong = qs('.sidebar__user strong');
+  if (strong) strong.textContent = name;
+  document.querySelectorAll('.sidebar__user .avatar, .topbar__actions .avatar').forEach((node) => {
+    if (!node.querySelector('img')) node.textContent = initials(name);
+  });
 }
 
 async function refreshBadges() {
@@ -120,7 +135,7 @@ async function route() {
   window.scrollTo({ top: 0 });
 
   try {
-    await active.render(outlet, { user: state.user, reload: route, refreshBadges });
+    await active.render(outlet, { user: state.user, reload: route, refreshBadges, updateIdentity });
   } catch (error) {
     outlet.innerHTML = `<section class="card"><p class="muted">${esc(error.message)}</p></section>`;
   }
