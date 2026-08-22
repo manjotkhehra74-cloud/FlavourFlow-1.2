@@ -4,6 +4,7 @@ import {
   avatar, currentPosition, emptyState, esc, formatDate, formatTime, greeting, icon,
   loadingRows, qs, relativeTime, statusPill, titleCase, toast,
 } from '../ui.js';
+import { employeeForm } from './employees.js';
 import { t } from '../i18n.js';
 
 /* Audit actions arrive as `entity.verb`; translate both halves so the feed reads natively. */
@@ -60,6 +61,9 @@ export async function render(root, context) {
     ${data.recentActivity?.length ? activityCard(data.recentActivity) : ''}`;
 
   wirePunch(root, context);
+  qs('[data-self-profile]', root)?.addEventListener('click', () => employeeForm(null, context.reload, {
+    name: user.name, phone: user.phone, userId: user.id,
+  }));
 }
 
 function punchCard(data, user) {
@@ -67,11 +71,16 @@ function punchCard(data, user) {
   const dateLine = formatDate(data.today, { weekday: 'long', day: 'numeric', month: 'long' });
 
   if (!data.employee) {
+    const canManage = can(user.role, 'employees.manage');
     return `<section class="card punch">
       <div class="punch__info">
         <p class="muted small">${icon('attendance', 14)} ${esc(dateLine)}</p>
         <h2>${esc(greeting())}, ${esc(name)} 🙏</h2>
         <p class="muted">${esc(t('Your account is not linked to an employee profile yet, so punching is disabled. You can still manage the team below.'))}</p>
+        ${canManage ? `<div class="row" style="gap:8px;margin-top:4px">
+          <button class="btn btn--gradient" data-self-profile>${icon('plus', 16)} ${esc(t('Create my employee profile'))}</button>
+          <a class="btn btn--outline" href="#/employees">${icon('employees', 16)} ${esc(t('Add the team'))}</a>
+        </div>` : `<p class="small muted">${esc(t('Ask HR to link your login to an employee record.'))}</p>`}
       </div>
     </section>`;
   }

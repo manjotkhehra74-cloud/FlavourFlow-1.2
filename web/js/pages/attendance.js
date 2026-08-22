@@ -21,6 +21,10 @@ export async function render(root, context) {
     register: [],
   };
 
+  context.pageActions?.(canManage
+    ? `<button class="btn btn--gradient" data-manual-head>${icon('plus', 16)} ${esc(t('Manual entry'))}</button>` : '')
+    ?.querySelector('[data-manual-head]')?.addEventListener('click', () => manualEntry(load));
+
   root.innerHTML = `
     <section class="card" style="padding-bottom:14px">
       <div class="segmented" style="max-width:420px">
@@ -170,7 +174,7 @@ export async function render(root, context) {
         const position = await currentPosition();
         if (mode === 'in') await api.punchIn(position || {});
         else await api.punchOut(position || {});
-        toast(mode === 'in' ? 'Punched in. Have a great shift!' : 'Punched out. Well done!', 'ok');
+        toast(mode === 'in' ? t('Punched in. Have a great shift!') : t('Punched out. Well done!'), 'ok');
         await load();
       } catch (error) { toast(error.message, 'err'); button.disabled = false; }
     });
@@ -187,7 +191,7 @@ export async function render(root, context) {
         <h3>${esc(t('Team register'))}</h3>
         <div class="row spacer">
           <input type="month" value="${state.registerMonth}" data-register-month style="padding:8px 11px;border-radius:11px;border:1px solid var(--line)" />
-          ${canManage ? `<button class="btn btn--sm" data-manual>${icon('plus', 15)} Manual entry</button>` : ''}
+          ${canManage ? `<button class="btn btn--sm" data-manual>${icon('plus', 15)} ${esc(t('Manual entry'))}</button>` : ''}
         </div>
       </div>
       <div class="field" style="margin-bottom:12px"><input type="search" data-search value="${esc(state.search)}" placeholder="${esc(t('Search employee or department…'))}" /></div>
@@ -221,6 +225,7 @@ export async function render(root, context) {
 export async function manualEntry(onDone, preselectId) {
   let employees = [];
   try { employees = (await api.employees()).employees; } catch { toast(t('Could not load employees'), 'err'); return; }
+  if (!employees.length) { toast(t('Add an employee first — there is nobody to mark yet.'), 'err'); return; }
   const result = await modal({
     title: t('Manual attendance'),
     submitLabel: t('Save attendance'),

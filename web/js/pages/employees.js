@@ -123,11 +123,11 @@ export async function render(root, context) {
   }
 }
 
-export async function employeeForm(employee, onDone) {
+export async function employeeForm(employee, onDone, prefill = {}) {
   const editing = Boolean(employee);
   let users = [];
   if (!editing) { try { users = (await api.users()).users; } catch { users = []; } }
-  const value = (key) => esc(employee?.[key] ?? '');
+  const value = (key) => esc(employee?.[key] ?? prefill[key] ?? '');
   const result = await modal({
     title: editing ? `Edit ${employee.name}` : t('Add employee'),
     submitLabel: editing ? t('Save changes') : t('Add employee'),
@@ -142,7 +142,7 @@ export async function employeeForm(employee, onDone) {
       <div class="field"><label>${esc(t('Joining date'))}</label><input type="date" name="joinDate" value="${value('join_date')}" /></div>
       ${!editing && users.length ? `<div class="field"><label>${esc(t('Link login account'))}</label><select name="userId">
         <option value="">${esc(t('Not linked'))}</option>
-        ${users.map((account) => `<option value="${account.id}">${esc(account.name)} · ${esc(account.phone || '')}</option>`).join('')}
+        ${users.map((account) => `<option value="${account.id}" ${Number(prefill.userId) === account.id ? 'selected' : ''}>${esc(account.name)} · ${esc(account.phone || '')}</option>`).join('')}
       </select><span class="field__hint">${esc(t('Needed for app punch-in'))}</span></div>` : ''}
     </div>`,
   });

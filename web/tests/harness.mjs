@@ -29,6 +29,8 @@ export async function boot({ phone = '+919000000001', language = 'pa', appearanc
   global.localStorage = window.localStorage;
   global.CustomEvent = window.CustomEvent;
   global.HTMLElement = window.HTMLElement;
+  // Node's own FormData rejects a JSDOM <form>; the page must use the window's copy.
+  global.FormData = window.FormData;
   Object.defineProperty(globalThis, 'navigator', { value: window.navigator, configurable: true });
 
   const realFetch = globalThis.fetch;

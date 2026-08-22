@@ -107,6 +107,15 @@ cd server && DATABASE_PATH=./data/demo.sqlite PORT=3101 node src/index.js &
 
 node web/tests/sweep.mjs +919000000001 pa dark   # every route renders, no thrown errors
 node web/tests/shell.mjs +919000000001 pa dark   # app bar, search, tab bar, filters
+node web/tests/onboarding.mjs                    # first run: no employees -> working punch
+```
+
+`onboarding.mjs` needs a database with only a super admin:
+
+```sh
+cd server && DATABASE_PATH=./data/fresh.sqlite ADMIN_NAME="Manjot Singh" \
+  ADMIN_PHONE="+919501606877" ADMIN_PASSWORD="fresh-password-123" \
+  node tools/bootstrap-super-admin.js
 ```
 
 Arguments are `<phone> <language> <appearance>`. Filter the noisy JSDOM warnings with

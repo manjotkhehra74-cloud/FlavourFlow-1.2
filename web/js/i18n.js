@@ -462,6 +462,10 @@ const pa = {
   'this week': 'ਇਸ ਹਫ਼ਤੇ',
   'You are all caught up': 'ਸਭ ਕੁਝ ਵੇਖ ਲਿਆ',
   'Nothing here yet': 'ਹਾਲੇ ਇੱਥੇ ਕੁਝ ਨਹੀਂ',
+  'Create my employee profile': 'ਮੇਰੀ ਕਰਮਚਾਰੀ ਪ੍ਰੋਫ਼ਾਈਲ ਬਣਾਓ',
+  'Add the team': 'ਟੀਮ ਜੋੜੋ',
+  'Ask HR to link your login to an employee record.': 'ਐਚਆਰ ਨੂੰ ਕਹੋ ਕਿ ਤੁਹਾਡਾ ਲਾਗਇਨ ਕਿਸੇ ਕਰਮਚਾਰੀ ਰਿਕਾਰਡ ਨਾਲ ਜੋੜ ਦੇਵੇ।',
+  'Add an employee first — there is nobody to mark yet.': 'ਪਹਿਲਾਂ ਕਰਮਚਾਰੀ ਜੋੜੋ — ਹਾਲੇ ਕਿਸੇ ਦੀ ਹਾਜ਼ਰੀ ਨਹੀਂ ਲਾਈ ਜਾ ਸਕਦੀ।',
 };
 
 const hi = {
@@ -904,6 +908,10 @@ const hi = {
   'this week': 'इस हफ़्ते',
   'You are all caught up': 'सब कुछ देख लिया',
   'Nothing here yet': 'अभी यहाँ कुछ नहीं',
+  'Create my employee profile': 'मेरी कर्मचारी प्रोफ़ाइल बनाएँ',
+  'Add the team': 'टीम जोड़ें',
+  'Ask HR to link your login to an employee record.': 'एचआर से कहें कि आपका लॉगिन किसी कर्मचारी रिकॉर्ड से जोड़ दे।',
+  'Add an employee first — there is nobody to mark yet.': 'पहले कर्मचारी जोड़ें — अभी किसी की उपस्थिति दर्ज नहीं की जा सकती।',
 };
 
 const DICTIONARIES = { pa, hi, en: {} };
