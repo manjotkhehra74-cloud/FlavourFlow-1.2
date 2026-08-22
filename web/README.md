@@ -12,9 +12,10 @@ same origin.
 | `#/dashboard` | Punch in/out, today's counts, 14-day trend, department split, audit feed | `dashboard.view` |
 | `#/attendance` | Week strip, punch timeline, month summary, team register, manual entries | `attendance.view` (`attendance.manage` for manual) |
 | `#/leave` | Gradient balance card, apply for leave, approvals with Pending/Approved/Rejected/Calendar tabs | `leave.view` (`leave.manage` to approve) |
-| `#/employees` | Directory, search, profile drawer, add/edit | `employees.view` (`employees.manage` to edit) |
+| `#/employees` | Directory with search, department chips and today's status per person | `employees.view` (`employees.manage` to edit) |
+| `#/employees?id=N` | Employee profile: gradient header, Overview / Attendance / Leave tabs, manual entry | `employees.view` |
 | `#/reports` | Monthly summary, per-employee rates, CSV export | `reports.view` |
-| `#/users` | Login accounts and roles | `users.view` (`users.manage` to add) |
+| `#/users` | Role tiles that double as filters, status chips, per-user actions sheet (edit, reset password, enable/disable) | `users.view` (`users.manage` to add) |
 | `#/notifications` | Broadcasts and audit alerts | `notifications.view` |
 | `#/settings` | Change your own name, phone (login id) and password | `dashboard.view` |
 

@@ -10,6 +10,7 @@ import * as reports from './pages/reports.js';
 import * as users from './pages/users.js';
 import * as notifications from './pages/notifications.js';
 import * as settings from './pages/settings.js';
+import * as employeeProfile from './pages/employee-profile.js';
 
 const PAGES = { dashboard, attendance, leave, employees, reports, users, notifications, settings };
 const NAV_ICON = { dashboard: 'dashboard', attendance: 'attendance', leave: 'leave', employees: 'employees', reports: 'reports', users: 'users' };
@@ -121,12 +122,15 @@ async function refreshBadges() {
 async function route() {
   const outlet = qs('[data-outlet]');
   if (!outlet) return;
-  const key = (window.location.hash.replace(/^#\/?/, '').split('?')[0] || 'dashboard');
-  const page = PAGES[key];
+  const raw = window.location.hash.replace(/^#\/?/, '');
+  const key = raw.split('?')[0] || 'dashboard';
+  const params = new URLSearchParams(raw.split('?')[1] || '');
+  // Detail views live under their list route, e.g. #/employees?id=3
+  const page = key === 'employees' && params.has('id') ? employeeProfile : PAGES[key];
   const allowed = page && can(state.user.role, PAGE_PERMISSION[key]);
   if (!allowed) { window.location.hash = '#/dashboard'; if (key !== 'dashboard') return; }
 
-  const active = PAGES[allowed ? key : 'dashboard'];
+  const active = allowed ? page : PAGES.dashboard;
   qs('.shell')?.classList.remove('nav-open');
   document.querySelectorAll('[data-route]').forEach((link) => link.classList.toggle('active', link.dataset.route === active.meta.key));
   qs('[data-title]').textContent = active.meta.title;
@@ -135,7 +139,7 @@ async function route() {
   window.scrollTo({ top: 0 });
 
   try {
-    await active.render(outlet, { user: state.user, reload: route, refreshBadges, updateIdentity });
+    await active.render(outlet, { user: state.user, reload: route, refreshBadges, updateIdentity }, params);
   } catch (error) {
     outlet.innerHTML = `<section class="card"><p class="muted">${esc(error.message)}</p></section>`;
   }

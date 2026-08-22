@@ -119,7 +119,7 @@ export function toast(message, kind = '') {
 }
 
 /** Renders a modal and resolves with the submitted FormData (or null when dismissed). */
-export function modal({ title, body, submitLabel = 'Save', tone = '' }) {
+export function modal({ title, body, submitLabel = 'Save', tone = '', onMount }) {
   return new Promise((resolve) => {
     const backdrop = el(`<div class="modal-backdrop"><form class="modal">
       <div class="modal__head"><h3>${esc(title)}</h3><button type="button" class="icon-btn spacer" data-close style="margin-left:auto">${icon('close', 18)}</button></div>
@@ -140,6 +140,7 @@ export function modal({ title, body, submitLabel = 'Save', tone = '' }) {
     });
     document.addEventListener('keydown', onKey);
     qs('#modal-root').append(backdrop);
+    onMount?.(backdrop.querySelector('form'), () => finish(null));
     backdrop.querySelector('input, select, textarea')?.focus();
   });
 }

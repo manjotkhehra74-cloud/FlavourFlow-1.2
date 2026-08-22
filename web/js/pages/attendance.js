@@ -217,16 +217,17 @@ export async function render(root, context) {
   }
 }
 
-export async function manualEntry(onDone) {
+export async function manualEntry(onDone, preselectId) {
   let employees = [];
   try { employees = (await api.employees()).employees; } catch { toast('Could not load employees', 'err'); return; }
   const result = await modal({
-    title: 'Manual attendance entry',
+    title: 'Manual attendance',
     submitLabel: 'Save attendance',
     tone: 'btn--gradient',
-    body: `<div class="form-grid">
+    body: `<p class="muted small" style="margin-top:-6px">Mark or correct employee attendance.</p>
+    <div class="form-grid">
       <div class="field"><label>Employee</label><select name="employeeId" required>
-        ${employees.map((employee) => `<option value="${employee.id}">${esc(employee.name)}${employee.employee_code ? ` · ${esc(employee.employee_code)}` : ''}</option>`).join('')}
+        ${employees.map((employee) => `<option value="${employee.id}" ${Number(preselectId) === employee.id ? 'selected' : ''}>${esc(employee.name)}${employee.employee_code ? ` · ${esc(employee.employee_code)}` : ''}</option>`).join('')}
       </select></div>
       <div class="field"><label>Date</label><input type="date" name="attendanceDate" value="${todayIso()}" max="${todayIso()}" required /></div>
       <div class="field"><label>Status</label><select name="status">
