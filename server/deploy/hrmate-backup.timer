@@ -1,0 +1,10 @@
+[Unit]
+Description=Run HRMate SQLite backup every day
+
+[Timer]
+OnCalendar=*-*-* 00:15:00 Asia/Kolkata
+Persistent=true
+Unit=hrmate-backup.service
+
+[Install]
+WantedBy=timers.target

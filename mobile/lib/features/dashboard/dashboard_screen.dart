@@ -4,16 +4,23 @@ import '../../core/app_settings_controller.dart';
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../attendance/attendance_screen.dart';
+import '../auth/session_controller.dart';
+import '../leaves/leave_screen.dart';
+import '../employees/employees_screen.dart';
+import '../auth/profile_settings_screen.dart';
+import 'reports_screen.dart';
+import 'notifications_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key, required this.settings});
+  const DashboardScreen({super.key, required this.settings, required this.session});
   final AppSettingsController settings;
+  final SessionController session;
 
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: const Color(0xFFF5F8FC),
     body: SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(18, 18, 18, 134), children: [
-      _ReferenceHeader(),
+      _ReferenceHeader(onNotifications: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => NotificationsScreen(session: session)))),
       SizedBox(height: 24),
       _ReferencePunchCard(),
       SizedBox(height: 22),
@@ -21,34 +28,36 @@ class DashboardScreen extends StatelessWidget {
       SizedBox(height: 27),
       _WorkspaceTitle(),
       SizedBox(height: 14),
-      _ReferenceWorkspace(onAttendance: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AttendanceScreen()))),
+      _ReferenceWorkspace(onAttendance: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => AttendanceScreen(session: session))), onLeave: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => LeaveScreen(session: session))), onTeam: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => EmployeesScreen(session: session))), onReports: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ReportsScreen(session: session)))),
     ])),
-    bottomNavigationBar: _ReferenceBottomNav(onCalendar: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AttendanceScreen()))),
+    bottomNavigationBar: _ReferenceBottomNav(onCalendar: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => LeaveScreen(session: session))), onTeam: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => EmployeesScreen(session: session))), onMore: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProfileSettingsScreen(session: session, settings: settings))), onPunch: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => AttendanceScreen(session: session)))),
   );
 }
 
 class _ReferenceHeader extends StatelessWidget {
-  const _ReferenceHeader();
+  const _ReferenceHeader({required this.onNotifications});
+  final VoidCallback onNotifications;
   @override
   Widget build(BuildContext context) => Row(children: [
     Container(width: 62, height: 62, padding: const EdgeInsets.all(3), decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white, boxShadow: [BoxShadow(color: Color(0x150F2440), blurRadius: 10)]), child: ClipOval(child: Image.asset('assets/branding/hrmate-app-icon.png', fit: BoxFit.cover))),
     const SizedBox(width: 13),
     Expanded(child: Text('${tr('sat_sri_akal')}, ${tr('sample_name')} 🙏', maxLines: 2, style: const TextStyle(color: Color(0xFF0F2440), fontSize: 23, height: 1.15, fontWeight: FontWeight.w800))),
-    const _HeaderIcon(icon: Icons.notifications_none_rounded, dot: true),
+    _HeaderIcon(icon: Icons.notifications_none_rounded, dot: true, onTap: onNotifications),
     const SizedBox(width: 10),
     Container(width: 57, height: 57, padding: const EdgeInsets.all(3), decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white, boxShadow: [BoxShadow(color: Color(0x150F2440), blurRadius: 10)]), child: const CircleAvatar(backgroundColor: Color(0xFF173D72), child: Icon(Icons.person_rounded, color: Colors.white, size: 31))),
   ]);
 }
 
 class _HeaderIcon extends StatelessWidget {
-  const _HeaderIcon({required this.icon, required this.dot});
+  const _HeaderIcon({required this.icon, required this.dot, this.onTap});
   final IconData icon;
   final bool dot;
+  final VoidCallback? onTap;
   @override
-  Widget build(BuildContext context) => Stack(clipBehavior: Clip.none, children: [
+  Widget build(BuildContext context) => GestureDetector(onTap: onTap, child: Stack(clipBehavior: Clip.none, children: [
     Container(width: 57, height: 57, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), boxShadow: const [BoxShadow(color: Color(0x150F2440), blurRadius: 10)]), child: Icon(icon, color: const Color(0xFF0F2440), size: 29)),
     if (dot) const Positioned(right: 5, top: 5, child: CircleAvatar(radius: 5, backgroundColor: HRMateTheme.blue)),
-  ]);
+  ]));
 }
 
 class _ReferencePunchCard extends StatelessWidget {
@@ -137,17 +146,20 @@ class _WorkspaceTitle extends StatelessWidget {
 }
 
 class _ReferenceWorkspace extends StatelessWidget {
-  const _ReferenceWorkspace({required this.onAttendance});
+  const _ReferenceWorkspace({required this.onAttendance, required this.onLeave, required this.onTeam, required this.onReports});
   final VoidCallback onAttendance;
+  final VoidCallback onLeave;
+  final VoidCallback onTeam;
+  final VoidCallback onReports;
   @override
   Widget build(BuildContext context) => Row(children: [
     Expanded(child: _WorkspaceItem(icon: Icons.calendar_month_rounded, labelKey: 'attendance', subKey: 'view_history', color: HRMateTheme.blue, onTap: onAttendance)),
     const SizedBox(width: 8),
-    const Expanded(child: _WorkspaceItem(icon: Icons.note_add_outlined, labelKey: 'apply_leave', subKey: 'request_time_off', color: Color(0xFF159947))),
+    Expanded(child: _WorkspaceItem(icon: Icons.note_add_outlined, labelKey: 'apply_leave', subKey: 'request_time_off', color: const Color(0xFF159947), onTap: onLeave)),
     const SizedBox(width: 8),
-    const Expanded(child: _WorkspaceItem(icon: Icons.groups_2_outlined, labelKey: 'my_team', subKey: 'team_overview', color: Color(0xFF814FE8))),
+    Expanded(child: _WorkspaceItem(icon: Icons.groups_2_outlined, labelKey: 'my_team', subKey: 'team_overview', color: const Color(0xFF814FE8), onTap: onTeam)),
     const SizedBox(width: 8),
-    const Expanded(child: _WorkspaceItem(icon: Icons.bar_chart_rounded, labelKey: 'reports', subKey: 'insights_stats', color: Color(0xFF1596CA))),
+    Expanded(child: _WorkspaceItem(icon: Icons.bar_chart_rounded, labelKey: 'reports', subKey: 'insights_stats', color: const Color(0xFF1596CA), onTap: onReports)),
   ]);
 }
 
@@ -163,14 +175,17 @@ class _WorkspaceItem extends StatelessWidget {
 }
 
 class _ReferenceBottomNav extends StatelessWidget {
-  const _ReferenceBottomNav({required this.onCalendar});
+  const _ReferenceBottomNav({required this.onCalendar, required this.onTeam, required this.onMore, required this.onPunch});
   final VoidCallback onCalendar;
+  final VoidCallback onTeam;
+  final VoidCallback onMore;
+  final VoidCallback onPunch;
   @override
   Widget build(BuildContext context) => SizedBox(height: 112, child: Stack(clipBehavior: Clip.none, alignment: Alignment.topCenter, children: [
     Container(margin: const EdgeInsets.only(top: 25), decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(29)), boxShadow: [BoxShadow(color: Color(0x180F2440), blurRadius: 18, offset: Offset(0, -2))]), child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-      const _NavEntry(icon: Icons.home_rounded, labelKey: 'home', active: true), _NavEntry(icon: Icons.calendar_month_outlined, labelKey: 'calendar', active: false, onTap: onCalendar), const SizedBox(width: 68), const _NavEntry(icon: Icons.groups_2_outlined, labelKey: 'team', active: false), const _NavEntry(icon: Icons.menu_rounded, labelKey: 'more', active: false),
+      const _NavEntry(icon: Icons.home_rounded, labelKey: 'home', active: true), _NavEntry(icon: Icons.calendar_month_outlined, labelKey: 'calendar', active: false, onTap: onCalendar), const SizedBox(width: 68), _NavEntry(icon: Icons.groups_2_outlined, labelKey: 'team', active: false, onTap: onTeam), _NavEntry(icon: Icons.menu_rounded, labelKey: 'more', active: false, onTap: onMore),
     ])),
-    Positioned(top: -11, child: Column(children: [Container(width: 100, height: 100, padding: const EdgeInsets.all(7), decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white, boxShadow: [BoxShadow(color: Color(0x250F2440), blurRadius: 15)]), child: Container(decoration: const BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [HRMateTheme.blue, HRMateTheme.green], begin: Alignment.topLeft, end: Alignment.bottomRight)), child: const Icon(Icons.fingerprint_rounded, color: Colors.white, size: 48))), Text(tr('punch'), style: const TextStyle(color: Color(0xFF0F2440), fontWeight: FontWeight.w800, fontSize: 12))])),
+    Positioned(top: -11, child: GestureDetector(onTap: onPunch, child: Column(children: [Container(width: 100, height: 100, padding: const EdgeInsets.all(7), decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white, boxShadow: [BoxShadow(color: Color(0x250F2440), blurRadius: 15)]), child: Container(decoration: const BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [HRMateTheme.blue, HRMateTheme.green], begin: Alignment.topLeft, end: Alignment.bottomRight)), child: const Icon(Icons.fingerprint_rounded, color: Colors.white, size: 48))), Text(tr('punch'), style: const TextStyle(color: Color(0xFF0F2440), fontWeight: FontWeight.w800, fontSize: 12))]))),
   ]));
 }
 

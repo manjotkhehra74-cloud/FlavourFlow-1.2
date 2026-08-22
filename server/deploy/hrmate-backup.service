@@ -1,0 +1,10 @@
+[Unit]
+Description=HRMate SQLite daily backup
+After=hrmate.service
+
+[Service]
+Type=oneshot
+User=www-data
+WorkingDirectory=/opt/hrmate/server
+EnvironmentFile=/etc/hrmate.env
+ExecStart=/opt/hrmate/server/tools/backup-hrmate.sh

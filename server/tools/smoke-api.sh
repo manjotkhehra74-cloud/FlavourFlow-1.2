@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Run on the HRMate VPS after deploy. It does not mutate records.
+set -Eeuo pipefail
+API_URL="${API_URL:-http://127.0.0.1:3101/api/v1}"
+: "${SMOKE_ADMIN_PHONE:?Set SMOKE_ADMIN_PHONE in the shell}"
+: "${SMOKE_ADMIN_PASSWORD:?Set SMOKE_ADMIN_PASSWORD in the shell}"
+
+health="$(curl --fail --silent --show-error "${API_URL%/api/v1}/health")"
+printf '%s' "$health" | grep -q '"status":"ok"'
+token="$(curl --fail --silent --show-error -X POST "$API_URL/auth/login" \
+  -H 'Content-Type: application/json' \
+  --data "{\"phone\":\"$SMOKE_ADMIN_PHONE\",\"password\":\"$SMOKE_ADMIN_PASSWORD\"}" \
+  | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).token))')"
+[ -n "$token" ]
+curl --fail --silent --show-error "$API_URL/auth/me" -H "Authorization: Bearer $token" >/dev/null
+curl --fail --silent --show-error "$API_URL/meta/navigation" >/dev/null
+echo "HRMate API smoke test VERIFIED ✓"

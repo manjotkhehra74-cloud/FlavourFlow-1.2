@@ -1,0 +1,8 @@
+import { Router } from 'express';
+import { db } from '../db/index.js';
+import { authRequired, requirePerm } from '../middleware/auth.js';
+
+const router = Router(); router.use(authRequired, requirePerm('reports.view'));
+router.get('/attendance-summary', (req,res) => { const month=req.query.month || new Date().toISOString().slice(0,7); const rows=db.prepare(`SELECT status,COUNT(*) AS count FROM attendance WHERE attendance_date LIKE ? GROUP BY status`).all(`${month}%`); const counts=Object.fromEntries(rows.map(r=>[r.status,r.count])); const total=Object.values(counts).reduce((a,b)=>a+b,0); const present=(counts.present||0)+(counts.late||0); res.json({month,counts,total,attendanceRate:total?Number((present*100/total).toFixed(1)):0,averageLateMinutes:0,leaveDays:db.prepare("SELECT COALESCE(SUM(days),0) AS days FROM leaves WHERE status='approved' AND start_date LIKE ?").get(`${month}%`).days}); });
+router.get('/attendance-register.csv', (req,res) => { const month=req.query.month || new Date().toISOString().slice(0,7); const rows=db.prepare(`SELECT e.employee_code,e.name,e.department,a.attendance_date,a.status,a.punch_in_at,a.punch_out_at FROM attendance a JOIN employees e ON e.id=a.employee_id WHERE a.attendance_date LIKE ? ORDER BY e.name,a.attendance_date`).all(`${month}%`); const esc=(v)=>`"${String(v??'').replaceAll('"','""')}"`; const csv=['Employee code,Name,Department,Date,Status,Punch in,Punch out',...rows.map(r=>[r.employee_code,r.name,r.department,r.attendance_date,r.status,r.punch_in_at,r.punch_out_at].map(esc).join(','))].join('\n'); res.setHeader('Content-Type','text/csv; charset=utf-8'); res.setHeader('Content-Disposition',`attachment; filename="hrmate-attendance-${month}.csv"`); res.send(csv); });
+export default router;

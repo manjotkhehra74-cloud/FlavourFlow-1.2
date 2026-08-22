@@ -1,0 +1,10 @@
+[Unit]
+Description=Run HRMate attendance close every night in IST
+
+[Timer]
+OnCalendar=*-*-* 23:55:00 Asia/Kolkata
+Persistent=true
+Unit=hrmate-attendance-close.service
+
+[Install]
+WantedBy=timers.target
