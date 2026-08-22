@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import { can } from '../rbac.js';
-import { avatar, emptyState, esc, icon, loadingRows, modal, qs, toast } from '../ui.js';
+import { avatar, emptyState, esc, filterSheet, icon, loadingRows, modal, qs, toast } from '../ui.js';
 import { t } from '../i18n.js';
 
 export const meta = { key: 'employees', title: 'Employees', subtitle: 'Team directory and profiles' };
@@ -17,13 +17,13 @@ const TODAY_TONE = {
 export async function render(root, context) {
   const { user } = context;
   const canManage = can(user.role, 'employees.manage');
-  const state = { search: '', department: 'All', employees: [] };
+  const state = { search: '', department: 'All', status: 'all', shift: 'all', employees: [] };
+
+  const head = context.pageActions?.(`
+    <button class="icon-btn" data-filter title="${esc(t('Filters'))}">${icon('filter', 18)}</button>
+    ${canManage ? `<button class="btn btn--gradient" data-add>${icon('plus', 16)} ${esc(t('Add employee'))}</button>` : ''}`);
 
   root.innerHTML = `<section class="card">
-    <div class="card__head">
-      <h3>${esc(t('Employees'))}</h3>
-      ${canManage ? `<button class="btn btn--sm btn--gradient spacer" data-add>${icon('plus', 15)} Add employee</button>` : ''}
-    </div>
     <div class="field"><input type="search" data-search placeholder="${esc(t('Search name, department…'))}" /></div>
     <div class="chips" data-chips style="margin-top:12px"></div>
   </section>
@@ -31,7 +31,36 @@ export async function render(root, context) {
 
   const body = qs('[data-body]', root);
   qs('[data-search]', root).addEventListener('input', (event) => { state.search = event.target.value.toLowerCase(); paint(); });
-  qs('[data-add]', root)?.addEventListener('click', () => employeeForm(null, load));
+  head?.querySelector('[data-add]')?.addEventListener('click', () => employeeForm(null, load));
+  head?.querySelector('[data-filter]')?.addEventListener('click', openFilters);
+
+  async function openFilters() {
+    const shifts = [...new Set(state.employees.map((employee) => employee.shift_name).filter(Boolean))].sort();
+    const picked = await filterSheet({
+      groups: [
+        {
+          key: 'status',
+          label: t("Today's status"),
+          value: state.status,
+          options: [
+            { value: 'all', label: t('All') },
+            ...Object.entries(TODAY_TONE).map(([key, tone]) => ({ value: key, label: tone.label })),
+          ],
+        },
+        {
+          key: 'shift',
+          label: t('Shift'),
+          value: state.shift,
+          options: [{ value: 'all', label: t('All') }, ...shifts.map((name) => ({ value: name, label: name }))],
+        },
+      ],
+    });
+    if (!picked) return;
+    Object.assign(state, picked);
+    const active = state.status !== 'all' || state.shift !== 'all';
+    head?.querySelector('[data-filter]')?.classList.toggle('is-active', active);
+    paint();
+  }
 
   await load();
 
@@ -54,7 +83,11 @@ export async function render(root, context) {
   function paint() {
     const filtered = state.employees.filter((employee) => {
       const haystack = `${employee.name} ${employee.employee_code || ''} ${employee.phone || ''} ${employee.role_title || ''} ${employee.department || ''}`.toLowerCase();
-      return haystack.includes(state.search) && (state.department === 'All' || employee.department === state.department);
+      const key = employee.on_leave ? 'leave' : (employee.today_status || 'none');
+      return haystack.includes(state.search)
+        && (state.department === 'All' || employee.department === state.department)
+        && (state.status === 'all' || key === state.status)
+        && (state.shift === 'all' || employee.shift_name === state.shift);
     });
     if (!filtered.length) { body.innerHTML = `<section class="card">${emptyState(t('No employees found'), t('Try a different search or add a new employee.'))}</section>`; return; }
 

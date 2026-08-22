@@ -44,26 +44,36 @@ function lineChart(daily) {
   </svg>`;
 }
 
+/** Tiny trend line under an insight tile — purely decorative, drawn from the same month. */
+function sparkline(values, colour) {
+  const points = values.filter((value) => value !== null && value !== undefined);
+  if (points.length < 2) return '';
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const span = max - min || 1;
+  const step = 100 / (points.length - 1);
+  const path = points.map((value, index) => `${index ? 'L' : 'M'}${(index * step).toFixed(1)} ${(22 - ((value - min) / span) * 18).toFixed(1)}`).join(' ');
+  return `<svg class="spark" viewBox="0 0 100 26" preserveAspectRatio="none" aria-hidden="true">
+    <path d="${path}" fill="none" stroke="${colour}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+  </svg>`;
+}
+
 export async function render(root, context) {
   let month = monthIso();
 
-  root.innerHTML = `
-    <section class="card">
-      <div class="card__head">
-        <h3>${esc(t('Reports'))}</h3>
-        <div class="row" style="flex-wrap:nowrap;gap:6px;margin-left:auto">
-          <button class="icon-btn" data-month="-1" title="${esc(t('Previous month'))}">${icon('arrowLeft', 16)}</button>
-          <strong class="small" data-label style="min-width:120px;text-align:center">${esc(monthName(month))}</strong>
-          <button class="icon-btn" data-month="1" title="${esc(t('Next month'))}">${icon('arrowRight', 16)}</button>
-        </div>
-      </div>
-    </section>
-    <div data-body>${loadingRows(4)}</div>`;
+  const head = context.pageActions?.(`
+    <div class="monthpick">
+      <button class="icon-btn" data-month="-1" title="${esc(t('Previous month'))}">${icon('arrowLeft', 16)}</button>
+      <span>${icon('attendance', 16)}<strong data-label>${esc(monthName(month))}</strong></span>
+      <button class="icon-btn" data-month="1" title="${esc(t('Next month'))}">${icon('arrowRight', 16)}</button>
+    </div>`);
+
+  root.innerHTML = `<div data-body>${loadingRows(4)}</div>`;
 
   const body = qs('[data-body]', root);
-  root.querySelectorAll('[data-month]').forEach((button) => button.addEventListener('click', () => {
+  head?.querySelectorAll('[data-month]').forEach((button) => button.addEventListener('click', () => {
     month = shiftMonth(month, Number(button.dataset.month));
-    qs('[data-label]', root).textContent = monthName(month);
+    head.querySelector('[data-label]').textContent = monthName(month);
     load();
   }));
 
@@ -105,11 +115,14 @@ export async function render(root, context) {
         <div class="card__head"><h3>${esc(t('Insights'))}</h3></div>
         <div class="tiles">
           <div class="tile" style="cursor:default"><span class="tile__icon tone-amber">${icon('clock')}</span>
-            <small>${esc(t('Avg late arrival'))}</small><strong>${esc(insights.averageLateMinutes)}<span style="font-size:13px;color:var(--muted);font-weight:600"> ${esc(t('min'))}</span></strong></div>
+            <small>${esc(t('Avg late arrival'))}</small><strong>${esc(insights.averageLateMinutes)}<span style="font-size:13px;color:var(--muted);font-weight:600"> ${esc(t('min'))}</span></strong>
+            ${sparkline(data.daily.map((day) => day.late ?? null), '#1e6fe0')}</div>
           <div class="tile" style="cursor:default"><span class="tile__icon tone-green">${icon('circleCheck')}</span>
-            <small>${esc(t('On-time rate'))}</small><strong>${esc(insights.onTimeRate)}<span style="font-size:13px;color:var(--muted);font-weight:600">%</span></strong></div>
+            <small>${esc(t('On-time rate'))}</small><strong>${esc(insights.onTimeRate)}<span style="font-size:13px;color:var(--muted);font-weight:600">%</span></strong>
+            ${sparkline(data.daily.map((day) => day.rate ?? null), '#22c55e')}</div>
           <div class="tile" style="cursor:default"><span class="tile__icon tone-blue">${icon('umbrella')}</span>
-            <small>${esc(t('Leave days'))}</small><strong>${esc(insights.leaveDays)}</strong></div>
+            <small>${esc(t('Leave days'))}</small><strong>${esc(insights.leaveDays)}</strong>
+            ${sparkline(data.daily.map((day) => day.present ?? null), '#8b5cf6')}</div>
         </div>
       </section>
 

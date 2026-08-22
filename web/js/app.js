@@ -13,6 +13,8 @@ import * as users from './pages/users.js';
 import * as notifications from './pages/notifications.js';
 import * as settings from './pages/settings.js';
 import * as employeeProfile from './pages/employee-profile.js';
+import { openSearch } from './search.js';
+import { quickAction } from './quick.js';
 
 const PAGES = { dashboard, attendance, leave, employees, reports, users, notifications, settings };
 const NAV_ICON = { dashboard: 'dashboard', attendance: 'attendance', leave: 'leave', employees: 'employees', reports: 'reports', users: 'users' };
@@ -76,16 +78,28 @@ async function showShell() {
     </aside>
     <div class="backdrop" data-close-nav></div>
     <main class="main">
-      <header class="topbar">
-        <button class="icon-btn menu-btn" data-menu>${icon('menu')}</button>
-        <div><h1 data-title>${esc(t('Dashboard'))}</h1><small data-subtitle>${esc(t('Today at a glance'))}</small></div>
+      <header class="appbar">
+        <button class="icon-btn menu-btn" data-menu aria-label="${esc(t('Menu'))}">${icon('menu')}</button>
+        <a class="appbar__brand" href="#/dashboard">
+          <img src="/assets/hrmate-mark.png" alt="" />
+          <span><b>HR</b>Mate</span>
+        </a>
         <div class="topbar__actions">
+          <button class="icon-btn" data-search title="${esc(t('Search'))}" aria-label="${esc(t('Search'))}">${icon('search')}</button>
           <a class="icon-btn" href="#/notifications" title="${esc(t('Notifications'))}">${icon('bell')}<span class="dot" data-bell-badge hidden>0</span></a>
-          <a class="icon-btn" href="#/settings" title="${esc(t('Settings'))}">${icon('settings')}</a>
-          <a href="#/settings" title="${esc(t('Account settings'))}">${avatar(state.user.name, null)}</a>
+          <button class="appbar__me" data-account aria-haspopup="menu" aria-expanded="false">
+            ${avatar(state.user.name, null)}${icon('chevronDown', 16)}
+          </button>
         </div>
       </header>
-      <div class="content" data-outlet></div>
+      <div class="content">
+        <div class="page-head">
+          <div class="page-head__text"><h1 data-title>${esc(t('Dashboard'))}</h1><small data-subtitle>${esc(t('Today at a glance'))}</small></div>
+          <div class="page-head__actions" data-pageactions></div>
+        </div>
+        <div data-outlet></div>
+      </div>
+      <nav class="tabbar" data-tabbar></nav>
     </main>
   </div>`));
 
@@ -93,6 +107,9 @@ async function showShell() {
   qs('[data-logout]', root).addEventListener('click', signOut);
   qs('[data-menu]', root).addEventListener('click', () => shell.classList.toggle('nav-open'));
   qs('[data-close-nav]', root).addEventListener('click', () => shell.classList.remove('nav-open'));
+  qs('[data-search]', root).addEventListener('click', () => openSearch(state.user));
+  wireAccountMenu(root);
+  paintTabbar(visible);
 
   if (!state.wired) {
     window.addEventListener('hashchange', route);
@@ -151,6 +168,62 @@ async function refreshBadges() {
   });
 }
 
+/** Avatar dropdown in the app bar: profile, notifications, sign out. */
+function wireAccountMenu(scope) {
+  const button = qs('[data-account]', scope);
+  if (!button) return;
+  const menu = el(`<div class="menu menu--account" hidden>
+    <div class="menu__head">
+      ${avatar(state.user.name, null)}
+      <div><strong>${esc(state.user.name)}</strong><small>${esc(ROLE_LABEL[state.user.role] || state.user.role)}</small></div>
+    </div>
+    <a href="#/settings">${icon('users', 17)} ${esc(t('My profile'))}</a>
+    <a href="#/notifications">${icon('bell', 17)} ${esc(t('Notifications'))}</a>
+    <a href="#/settings">${icon('settings', 17)} ${esc(t('Settings'))}</a>
+    <button type="button" class="menu__danger" data-menu-logout>${icon('signOut', 17)} ${esc(t('Sign out'))}</button>
+  </div>`);
+  button.parentElement.append(menu);
+
+  const setOpen = (open) => {
+    menu.hidden = !open;
+    button.setAttribute('aria-expanded', String(open));
+  };
+  button.addEventListener('click', (event) => { event.stopPropagation(); setOpen(menu.hidden); });
+  menu.addEventListener('click', (event) => {
+    if (event.target.closest('[data-menu-logout]')) signOut();
+    setOpen(false);
+  });
+  document.addEventListener('click', (event) => {
+    if (!menu.hidden && !menu.contains(event.target) && event.target !== button) setOpen(false);
+  });
+}
+
+/**
+ * Phone tab bar. Four permitted destinations around a centre action button; the last slot
+ * opens the full navigation drawer so nothing becomes unreachable on a small screen.
+ */
+function paintTabbar(visible) {
+  const bar = qs('[data-tabbar]', root);
+  if (!bar) return;
+  const order = ['dashboard', 'attendance', 'leave', 'employees', 'reports', 'users'];
+  const byKey = new Map(visible.map((item) => [item.key, item]));
+  const picked = order.filter((key) => byKey.has(key)).slice(0, 4);
+  const label = (key) => t(byKey.get(key).label);
+  const left = picked.slice(0, 2);
+  const right = picked.slice(2, 4);
+
+  const link = (key) => `<a href="#/${key}" data-route="${key}">${icon(NAV_ICON[key] || 'dashboard', 22)}<span>${esc(label(key))}</span></a>`;
+
+  bar.innerHTML = `
+    ${left.map(link).join('')}
+    <button type="button" class="tabbar__fab" data-fab aria-label="${esc(t('Quick actions'))}">${icon('finger', 26)}</button>
+    ${right.map(link).join('')}
+    <button type="button" data-more>${icon('menu', 22)}<span>${esc(t('More'))}</span></button>`;
+
+  qs('[data-fab]', bar).addEventListener('click', () => quickAction(state.user, route));
+  qs('[data-more]', bar).addEventListener('click', () => qs('.shell')?.classList.add('nav-open'));
+}
+
 async function route() {
   const outlet = qs('[data-outlet]');
   if (!outlet) return;
@@ -165,13 +238,19 @@ async function route() {
   const active = allowed ? page : PAGES.dashboard;
   qs('.shell')?.classList.remove('nav-open');
   document.querySelectorAll('[data-route]').forEach((link) => link.classList.toggle('active', link.dataset.route === active.meta.key));
+  const actions = qs('[data-pageactions]');
+  if (actions) actions.innerHTML = '';
   qs('[data-title]').textContent = t(active.meta.title);
   qs('[data-subtitle]').textContent = t(active.meta.subtitle);
   document.title = `${t(active.meta.title)} · HRMate`;
   window.scrollTo({ top: 0 });
 
   try {
-    await active.render(outlet, { user: state.user, reload: route, refreshBadges, updateIdentity, signOut }, params);
+    await active.render(outlet, {
+      user: state.user, reload: route, refreshBadges, updateIdentity, signOut,
+      /** Pages drop their primary buttons next to the big page title, as in the design. */
+      pageActions: (html) => { if (actions) actions.innerHTML = html; return actions; },
+    }, params);
   } catch (error) {
     outlet.innerHTML = `<section class="card"><p class="muted">${esc(error.message)}</p></section>`;
   }

@@ -71,7 +71,7 @@ function punchCard(data, user) {
       <div class="punch__info">
         <p class="muted small">${icon('attendance', 14)} ${esc(dateLine)}</p>
         <h2>${esc(greeting())}, ${esc(name)} 🙏</h2>
-        <p class="muted">Your account is not linked to an employee profile yet, so punching is disabled. You can still manage the team below.</p>
+        <p class="muted">${esc(t('Your account is not linked to an employee profile yet, so punching is disabled. You can still manage the team below.'))}</p>
       </div>
     </section>`;
   }
@@ -79,7 +79,7 @@ function punchCard(data, user) {
   const record = data.myAttendance;
   const state = !record?.punch_in_at ? 'in' : (!record.punch_out_at ? 'out' : 'done');
   const headline = { in: t('Ready to punch in'), out: t('You are punched in'), done: t('Day complete') }[state];
-  const sub = { in: "Let's make it a productive day!", out: 'Remember to punch out before you leave.', done: 'Thanks for the good work today.' }[state];
+  const sub = { in: t("Let's make it a productive day!"), out: t('Remember to punch out before you leave.'), done: t('Thanks for the good work today.') }[state];
 
   return `<section class="card punch">
     <div class="punch__info">
@@ -87,8 +87,8 @@ function punchCard(data, user) {
       <h2>${esc(headline)}</h2>
       <p class="muted">${esc(sub)}</p>
       <div class="punch__badges">
-        <span class="pill pill--ok">${icon('pin', 13)} GPS verified</span>
-        <span class="pill pill--info">${icon('employees', 13)} Selfie optional</span>
+        <span class="pill pill--ok">${icon('pin', 13)} ${esc(t('GPS verified'))}</span>
+        <span class="pill pill--info">${icon('employees', 13)} ${esc(t('Selfie optional'))}</span>
         ${record?.status ? statusPill(record.status) : ''}
       </div>
       <div class="punch__times">
@@ -101,7 +101,7 @@ function punchCard(data, user) {
         ${icon('finger', 42)}
         <span>${esc(state === 'in' ? t('Punch in') : state === 'out' ? t('Punch out') : t('All done'))}</span>
       </button>
-      <small class="muted">${state === 'done' ? 'See you tomorrow' : 'Tap to record'}</small>
+      <small class="muted">${esc(state === 'done' ? t('See you tomorrow') : t('Tap to record'))}</small>
     </div>
   </section>`;
 }
@@ -115,9 +115,9 @@ function teamCounters(counts, trend = [], pendingLeaves) {
   const absentDelta = sum(week, 'absent') - sum(previous, 'absent');
 
   const tiles = [
-    { label: t('Present'), value: counts.present + counts.half_day, tone: 'green', iconName: 'employees', delta: presentDelta, deltaLabel: 'this week' },
-    { label: t('Leave'), value: pendingLeaves ?? counts.notMarked, tone: 'amber', iconName: 'leave', delta: null, deltaLabel: pendingLeaves === undefined ? 'not marked yet' : 'awaiting approval' },
-    { label: t('Late'), value: counts.late, tone: 'red', iconName: 'clock', delta: absentDelta, deltaLabel: 'absences this week' },
+    { label: t('Present'), value: counts.present + counts.half_day, tone: 'green', iconName: 'employees', delta: presentDelta, deltaLabel: t('this week') },
+    { label: t('Leave'), value: pendingLeaves ?? counts.notMarked, tone: 'amber', iconName: 'leave', delta: null, deltaLabel: pendingLeaves === undefined ? t('not marked yet') : t('awaiting approval') },
+    { label: t('Late'), value: counts.late, tone: 'red', iconName: 'clock', delta: absentDelta, deltaLabel: t('absences this week') },
   ];
 
   return `<section class="card card--flat" style="background:#eff4fb;border-color:#e2ebf7">
@@ -249,7 +249,7 @@ function wirePunch(root, context) {
       const position = await currentPosition();
       if (mode === 'in') await api.punchIn(position || {});
       else await api.punchOut(position || {});
-      toast(mode === 'in' ? 'Punched in. Have a great shift!' : 'Punched out. Well done!', 'ok');
+      toast(mode === 'in' ? t('Punched in. Have a great shift!') : t('Punched out. Well done!'), 'ok');
       context.reload();
     } catch (error) {
       toast(error.message, 'err');

@@ -68,6 +68,28 @@ Sign out.
 Four role counters (Super admins, HR managers, Supervisors, Employees), search, user cards
 with an initials avatar, role pill, active status and an overflow menu. "Add user" CTA.
 
+### App chrome
+
+- **App bar** — solid blue→azure gradient. Mark + `HRMate` lockup on phones (hidden on
+  desktop, where the sidebar carries the brand), then search, notification bell with an
+  unread dot, and an avatar button that opens the account menu
+  (My profile / Notifications / Settings / Sign out).
+- **Page head** — the big bold screen title and its subtitle sit in the body, with a slot
+  on the right for that screen's primary actions (`context.pageActions(html)`): Add
+  employee + filter, Add user + filter, the reports month picker, Mark all read.
+- **Global search** — the magnifier opens a full-screen finder over the app. With an empty
+  field it lists the pages the role may open; typing also searches the employee directory
+  and login accounts. Results navigate straight to the record.
+- **Tab bar (phones)** — fixed bottom bar with up to four permitted destinations, a raised
+  gradient centre button, and *More*, which opens the full navigation drawer.
+- **Centre button** — punches in or out in one tap when the account is linked to an
+  employee and the day is still open; otherwise it opens a **quick-action sheet** with
+  every create action the role allows (apply for leave, manual attendance, add employee,
+  send announcement).
+- **Filter sheet** — a bottom sheet of single-choice chip groups with Reset and Apply,
+  shared by the employee directory (today's status, shift) and user management
+  (role, status).
+
 ## Deferred
 
 Biometric login and two-factor authentication are shown as rows with a "Coming soon" tag

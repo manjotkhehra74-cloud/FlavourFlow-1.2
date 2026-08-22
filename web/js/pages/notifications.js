@@ -24,9 +24,7 @@ export async function render(root, context) {
   root.innerHTML = `
     <section class="card">
       <div class="card__head">
-        <h3>${esc(t('Notifications'))}</h3>
-        <span class="pill pill--info" data-unread style="margin-left:8px">0 unread</span>
-        <button class="btn btn--sm btn--ghost spacer" data-read-all>${icon('check', 15)} Mark all read</button>
+        <span class="pill pill--info" data-unread>0 unread</span>
       </div>
       <div class="chips" style="margin-top:4px">
         <button class="chip is-active" data-filter="all">${esc(t('All'))}</button>
@@ -38,29 +36,17 @@ export async function render(root, context) {
     <div data-body>${loadingRows()}</div>`;
 
   const body = qs('[data-body]', root);
+  const head = context.pageActions?.(`<button class="btn btn--ghost" data-read-all>${icon('check', 16)} ${esc(t('Mark all read'))}</button>`);
 
-  qs('[data-read-all]', root).addEventListener('click', async () => {
+  head?.querySelector('[data-read-all]').addEventListener('click', async () => {
     try { await api.readAll(); toast(t('All notifications marked read'), 'ok'); await load(); context.refreshBadges(); }
     catch (error) { toast(error.message, 'err'); }
   });
 
-  qs('[data-broadcast]', root)?.addEventListener('click', async () => {
-    const result = await modal({
-      title: t('Send announcement'),
-      submitLabel: t('Send to everyone'),
-      tone: 'btn--gradient',
-      body: `<p class="muted small" style="margin-top:-6px">${esc(t('Every active account receives this, and the send is written to the audit trail.'))}</p>
-        <div class="field"><label>${esc(t('Title'))}</label><input name="title" required maxlength="80" placeholder="Holiday on 2 October" /></div>
-        <div class="field"><label>${esc(t('Message'))}</label><textarea name="body" required rows="4" placeholder="The plant will remain closed for Gandhi Jayanti."></textarea></div>`,
-    });
-    if (!result) return;
-    try {
-      const { recipients } = await api.broadcast(result);
-      toast(`${t('Announcement sent')} · ${recipients} ${recipients === 1 ? t('person') : t('people')}`, 'ok');
-      await load();
-      context.refreshBadges();
-    } catch (error) { toast(error.message, 'err'); }
-  });
+  qs('[data-broadcast]', root)?.addEventListener('click', () => broadcastForm(async () => {
+    await load();
+    context.refreshBadges();
+  }));
 
   root.querySelectorAll('[data-filter]').forEach((chip) => chip.addEventListener('click', () => {
     state.filter = chip.dataset.filter;
@@ -130,4 +116,22 @@ export async function render(root, context) {
       try { await api.readOne(item.id); await load(); context.refreshBadges(); } catch { /* non-critical */ }
     }));
   }
+}
+
+/** Shared by the notifications page and the quick-action sheet. */
+export async function broadcastForm(onDone) {
+  const result = await modal({
+    title: t('Send announcement'),
+    submitLabel: t('Send to everyone'),
+    tone: 'btn--gradient',
+    body: `<p class="muted small" style="margin-top:-6px">${esc(t('Every active account receives this, and the send is written to the audit trail.'))}</p>
+      <div class="field"><label>${esc(t('Title'))}</label><input name="title" required maxlength="80" placeholder="${esc(t('Holiday on 2 October'))}" /></div>
+      <div class="field"><label>${esc(t('Message'))}</label><textarea name="body" required rows="4" placeholder="${esc(t('The plant will remain closed for Gandhi Jayanti.'))}"></textarea></div>`,
+  });
+  if (!result) return;
+  try {
+    const { recipients } = await api.broadcast(result);
+    toast(`${t('Announcement sent')} · ${recipients} ${recipients === 1 ? t('person') : t('people')}`, 'ok');
+    await onDone?.();
+  } catch (error) { toast(error.message, 'err'); }
 }

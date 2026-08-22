@@ -38,24 +38,24 @@ export async function render(root, context) {
               .map(([label, value, type]) => `<article class="hero__tile">
                 <span class="stat__icon tone-${TYPE_TONE[type]}">${icon(TYPE_ICON[type])}</span>
                 <small>${label}</small>
-                <strong>${esc(value ?? 0)}<span>days</span></strong>
+                <strong>${esc(value ?? 0)}<span>${esc(t('days'))}</span></strong>
               </article>`).join('')}
           </div>
         </section>
 
         <button class="btn btn--lg btn--block btn--gradient" style="margin-top:16px" data-apply>
-          ${icon('attendance', 18)} Apply for leave ${icon('arrowRight', 16)}
+          ${icon('attendance', 18)} ${esc(t('Apply for leave'))} ${icon('arrowRight', 16)}
         </button>
 
         <section class="card" style="margin-top:16px">
-          <div class="card__head"><h3>${esc(t('Recent requests'))}</h3><span class="muted small spacer">${data.requests.length} total</span></div>
+          <div class="card__head"><h3>${esc(t('Recent requests'))}</h3><span class="muted small spacer">${data.requests.length} ${esc(t('total'))}</span></div>
           ${data.requests.length ? `<div class="stack">${data.requests.slice(0, 12).map((request) => `
             <div class="rowcard">
               <span class="rowcard__icon tone-${TYPE_TONE[request.leave_type]}">${icon(TYPE_ICON[request.leave_type])}</span>
               <div class="rowcard__body">
                 <strong>${esc(t('{type} leave', { type: t(titleCase(request.leave_type)) }))}</strong>
                 <small>${icon('attendance', 12)} ${esc(formatDate(request.start_date, { day: '2-digit', month: 'short' }))}${request.start_date === request.end_date ? '' : ` – ${esc(formatDate(request.end_date, { day: '2-digit', month: 'short' }))}`} · ${esc(request.days)} day${request.days === 1 ? '' : 's'}</small>
-                ${request.reviewer_note ? `<small style="display:block">Note: ${esc(request.reviewer_note)}</small>` : ''}
+                ${request.reviewer_note ? `<small style="display:block">${esc(t('Note'))}: ${esc(request.reviewer_note)}</small>` : ''}
               </div>
               ${statusPill(request.status)}
             </div>`).join('')}</div>`
@@ -125,12 +125,12 @@ export async function render(root, context) {
         ${balance === undefined ? '' : `<div class="list-card__badge">
           ${icon('scale', 16)}
           <small>${esc(t('Balance'))}</small>
-          <strong>${esc(balance)} days</strong>
+          <strong>${esc(balance)} ${esc(t('days'))}</strong>
         </div>`}
       </div>
       ${request.status === 'pending' ? `<div class="list-card__actions">
-        <button class="btn btn--outline" data-review="rejected" data-id="${request.id}">${icon('close', 16)} Reject</button>
-        <button class="btn btn--solid-green" data-review="approved" data-id="${request.id}">${icon('check', 16)} Approve</button>
+        <button class="btn btn--outline" data-review="rejected" data-id="${request.id}">${icon('close', 16)} ${esc(t('Reject'))}</button>
+        <button class="btn btn--solid-green" data-review="approved" data-id="${request.id}">${icon('check', 16)} ${esc(t('Approve'))}</button>
       </div>` : ''}
     </article>`;
   }
@@ -200,7 +200,7 @@ export async function render(root, context) {
   }
 }
 
-async function applyLeave(balance, onDone) {
+export async function applyLeave(balance, onDone) {
   const result = await modal({
     title: t('Apply for leave'),
     submitLabel: t('Submit request'),

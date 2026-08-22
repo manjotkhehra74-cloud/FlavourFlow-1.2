@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import { ROLE_LABEL, can } from '../rbac.js';
-import { avatar, emptyState, esc, formatDate, icon, loadingRows, modal, qs, toast } from '../ui.js';
+import { avatar, emptyState, esc, filterSheet, formatDate, icon, loadingRows, modal, qs, toast } from '../ui.js';
 import { t } from '../i18n.js';
 
 export const meta = { key: 'users', title: 'User management', subtitle: 'Login accounts, roles and passwords' };
@@ -14,14 +14,14 @@ const ROLE_TILES = [
 
 export async function render(root, context) {
   const canManage = can(context.user.role, 'users.manage');
-  const state = { search: '', role: 'All', users: [] };
+  const state = { search: '', role: 'All', status: 'All', users: [] };
+
+  const head = context.pageActions?.(`
+    <button class="icon-btn" data-filter title="${esc(t('Filters'))}">${icon('filter', 18)}</button>
+    ${canManage ? `<button class="btn btn--gradient" data-add>${icon('plus', 16)} ${esc(t('Add user'))}</button>` : ''}`);
 
   root.innerHTML = `
     <section class="card">
-      <div class="card__head">
-        <h3>${esc(t('User management'))}</h3>
-        ${canManage ? `<button class="btn btn--sm btn--gradient spacer" data-add>${icon('plus', 15)} Add user</button>` : ''}
-      </div>
       <div data-tiles class="tiles">${loadingRows(1)}</div>
       <div class="field" style="margin-top:16px"><input type="search" data-search placeholder="${esc(t('Search users by name, role or phone…'))}" /></div>
       <div class="chips" data-chips style="margin-top:12px"></div>
@@ -30,7 +30,29 @@ export async function render(root, context) {
 
   const body = qs('[data-body]', root);
   qs('[data-search]', root).addEventListener('input', (event) => { state.search = event.target.value.toLowerCase(); paint(); });
-  qs('[data-add]', root)?.addEventListener('click', () => userForm(null, load));
+  head?.querySelector('[data-add]')?.addEventListener('click', () => userForm(null, load));
+  head?.querySelector('[data-filter]')?.addEventListener('click', async () => {
+    const picked = await filterSheet({
+      groups: [
+        {
+          key: 'role',
+          label: t('Role'),
+          value: state.role,
+          options: [{ value: 'All', label: t('All') }, ...ROLE_TILES.map((tile) => ({ value: tile.role, label: t(tile.label) }))],
+        },
+        {
+          key: 'status',
+          label: t('Status'),
+          value: state.status,
+          options: [{ value: 'All', label: t('All') }, { value: 'Active', label: t('Active') }, { value: 'Disabled', label: t('Disabled') }],
+        },
+      ],
+    });
+    if (!picked) return;
+    Object.assign(state, picked);
+    head?.querySelector('[data-filter]')?.classList.toggle('is-active', state.role !== 'All' || state.status !== 'All');
+    load();
+  });
   await load();
 
   async function load() {

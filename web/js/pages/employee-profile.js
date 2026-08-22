@@ -47,7 +47,7 @@ export async function render(root, context, params) {
             ${icon('employees', 14)} ${esc(employee.department || t('Unassigned'))} · ${esc(employee.shift_name || t('No shift'))}
           </div>
           <span class="pill" style="background:rgba(255,255,255,.95);color:#15803d;margin-top:10px">
-            <i style="width:7px;height:7px;border-radius:50%;background:#16a34a;display:inline-block"></i> Active
+            <i style="width:7px;height:7px;border-radius:50%;background:#16a34a;display:inline-block"></i> ${esc(t('Active'))}
           </span>
         </div>
       </div>
@@ -55,16 +55,16 @@ export async function render(root, context, params) {
 
     <section class="card" style="padding:0;overflow:hidden">
       <div class="segmented" style="border:0;border-radius:0;border-bottom:1px solid var(--line)">
-        <button data-tab="overview" class="is-active">${icon('users', 16)} Overview</button>
-        <button data-tab="attendance">${icon('attendance', 16)} Attendance</button>
-        <button data-tab="leave">${icon('leave', 16)} Leave</button>
+        <button data-tab="overview" class="is-active">${icon('users', 16)} ${esc(t('Overview'))}</button>
+        <button data-tab="attendance">${icon('attendance', 16)} ${esc(t('Attendance'))}</button>
+        <button data-tab="leave">${icon('leave', 16)} ${esc(t('Leave'))}</button>
       </div>
       <div style="padding:18px" data-tabbody></div>
     </section>
 
     <div class="grid grid--2">
-      <a class="btn btn--outline btn--lg" href="#/attendance">${icon('attendance', 18)} View attendance</a>
-      ${canMark ? `<button class="btn btn--lg btn--gradient" data-manual>${icon('plus', 18)} Add manual entry</button>` : ''}
+      <button class="btn btn--outline btn--lg" data-goto-tab="attendance">${icon('attendance', 18)} ${esc(t('View attendance'))}</button>
+      ${canMark ? `<button class="btn btn--lg btn--gradient" data-manual>${icon('plus', 18)} ${esc(t('Add manual entry'))}</button>` : ''}
     </div>`;
 
   const tabBody = qs('[data-tabbody]', root);
@@ -73,6 +73,11 @@ export async function render(root, context, params) {
     root.querySelectorAll('[data-tab]').forEach((other) => other.classList.toggle('is-active', other.dataset.tab === tab));
     paintTab();
   }));
+  qs('[data-goto-tab]', root)?.addEventListener('click', () => {
+    const target = qs('[data-tab="attendance"]', root);
+    target?.click();
+    target?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+  });
   qs('[data-edit]', root)?.addEventListener('click', () => employeeForm(employee, () => context.reload()));
   qs('[data-manual]', root)?.addEventListener('click', () => manualEntry(() => context.reload(), employee.id));
   paintTab();

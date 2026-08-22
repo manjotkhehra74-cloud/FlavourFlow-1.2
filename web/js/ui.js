@@ -48,6 +48,10 @@ export const ICONS = {
   heart: '<path d="M20.4 6.6a4.6 4.6 0 0 0-6.5 0L12 8.5l-1.9-1.9a4.6 4.6 0 1 0-6.5 6.5L12 21l8.4-7.9a4.6 4.6 0 0 0 0-6.5z"/>',
   save: '<path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h7V3M8 21v-6h8v6"/>',
   shield: '<path d="M12 3l7 3v6c0 4.4-3 8-7 9-4-1-7-4.6-7-9V6z"/><path d="m9 12 2 2 4-4"/>',
+  chevronDown: '<path d="M6 9l6 6 6-6"/>',
+  filter: '<path d="M3 6h18M6 12h12M10 18h4"/>',
+  dots: '<circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/>',
+  grid: '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
   settings: '<circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7.5 19.4l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 14a2 2 0 1 1 0-4 1.6 1.6 0 0 0 1.6-2.5l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.6V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.6 1.5l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/>',
 };
 
@@ -171,3 +175,52 @@ export const currentPosition = () => new Promise((resolve) => {
     { enableHighAccuracy: true, timeout: 7000, maximumAge: 60000 },
   );
 });
+
+/**
+ * A bottom sheet of single-choice filter groups. Resolves with `{ groupKey: value }`
+ * when applied, or null when dismissed. Used by the employee and account directories.
+ */
+export function filterSheet({ title = t('Filters'), groups }) {
+  return new Promise((resolve) => {
+    const picked = Object.fromEntries(groups.map((group) => [group.key, group.value]));
+    const sheet = el(`<div class="sheet-backdrop" role="dialog" aria-modal="true">
+      <div class="sheet">
+        <span class="sheet__grip"></span>
+        <div class="row" style="justify-content:space-between">
+          <h3>${esc(title)}</h3>
+          <button type="button" class="btn btn--sm btn--ghost" data-reset>${esc(t('Reset'))}</button>
+        </div>
+        ${groups.map((group) => `<div>
+          <p class="searchbox__title" style="padding-left:0">${esc(group.label)}</p>
+          <div class="chips" data-group="${esc(group.key)}">
+            ${group.options.map((option) => `<button type="button" class="chip ${option.value === group.value ? 'is-active' : ''}" data-value="${esc(option.value)}">${esc(option.label)}</button>`).join('')}
+          </div>
+        </div>`).join('')}
+        <button type="button" class="btn btn--lg btn--gradient btn--block" data-apply>${esc(t('Apply filters'))}</button>
+      </div>
+    </div>`);
+
+    const finish = (value) => { sheet.remove(); document.removeEventListener('keydown', onKey); resolve(value); };
+    const onKey = (event) => { if (event.key === 'Escape') finish(null); };
+
+    sheet.addEventListener('click', (event) => {
+      if (event.target === sheet) return finish(null);
+      if (event.target.closest('[data-apply]')) return finish(picked);
+      if (event.target.closest('[data-reset]')) {
+        groups.forEach((group) => { picked[group.key] = group.options[0].value; });
+        sheet.querySelectorAll('[data-group]').forEach((row) => {
+          row.querySelectorAll('[data-value]').forEach((chip, index) => chip.classList.toggle('is-active', index === 0));
+        });
+        return;
+      }
+      const chip = event.target.closest('[data-value]');
+      if (!chip) return;
+      const row = chip.closest('[data-group]');
+      picked[row.dataset.group] = chip.dataset.value;
+      row.querySelectorAll('[data-value]').forEach((other) => other.classList.toggle('is-active', other === chip));
+    });
+
+    document.addEventListener('keydown', onKey);
+    qs('#modal-root').append(sheet);
+  });
+}
