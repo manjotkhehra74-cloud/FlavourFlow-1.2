@@ -7,4 +7,5 @@ Type=oneshot
 User=www-data
 WorkingDirectory=/opt/hrmate/server
 EnvironmentFile=/etc/hrmate.env
-ExecStart=/usr/bin/npm run attendance:close
+Environment=PATH=/opt/node20/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+ExecStart=/opt/node20/bin/npm run attendance:close

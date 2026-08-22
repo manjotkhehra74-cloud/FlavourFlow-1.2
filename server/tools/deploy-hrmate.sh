@@ -2,6 +2,7 @@
 # Run from a release checkout on the HRMate GCP VPS. Idempotent by design.
 set -Eeuo pipefail
 APP_DIR="${APP_DIR:-/opt/hrmate}"; SERVICE="hrmate"; ENV_FILE="${ENV_FILE:-/etc/hrmate.env}"
+export PATH="/opt/node20/bin:$PATH"
 cd "$APP_DIR/server"
 [ -f "$ENV_FILE" ] || { echo "Missing $ENV_FILE"; exit 1; }
 NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
