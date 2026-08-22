@@ -14,10 +14,10 @@ same origin.
 | `#/leave` | Gradient balance card, apply for leave, approvals with Pending/Approved/Rejected/Calendar tabs | `leave.view` (`leave.manage` to approve) |
 | `#/employees` | Directory with search, department chips and today's status per person | `employees.view` (`employees.manage` to edit) |
 | `#/employees?id=N` | Employee profile: gradient header, Overview / Attendance / Leave tabs, manual entry | `employees.view` |
-| `#/reports` | Monthly summary, per-employee rates, CSV export | `reports.view` |
+| `#/reports` | Gradient month card with a trend line, insights, PDF/Excel/CSV export, department bars, per-employee rates | `reports.view` |
 | `#/users` | Role tiles that double as filters, status chips, per-user actions sheet (edit, reset password, enable/disable) | `users.view` (`users.manage` to add) |
-| `#/notifications` | Broadcasts and audit alerts | `notifications.view` |
-| `#/settings` | Change your own name, phone (login id) and password | `dashboard.view` |
+| `#/notifications` | Today / Earlier grouping, All / Unread / Announcements filters, send announcement | `notifications.view` (`settings.manage` to broadcast) |
+| `#/settings` | Profile card, account rows, language / appearance / text size, sign out | `dashboard.view` |
 
 **Users** also carries account recovery: edit any account, change a role, disable it, or set
 a new password for a locked-out colleague. The API refuses to let anyone change their own

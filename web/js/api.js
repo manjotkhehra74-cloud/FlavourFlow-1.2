@@ -65,10 +65,14 @@ export const api = {
   updateUser: (id, body) => request('PATCH', `/users/${id}`, body),
   resetUserPassword: (id, newPassword) => request('POST', `/users/${id}/reset-password`, { newPassword }),
   notifications: () => request('GET', '/notifications'),
+  broadcast: (body) => request('POST', '/notifications/broadcast', body),
   readAll: () => request('POST', '/notifications/read-all'),
   readOne: (id) => request('POST', `/notifications/${id}/read`),
   attendanceSummary: (month) => request('GET', `/reports/attendance-summary?month=${month}`),
   registerCsvUrl: (month) => `${BASE}/reports/attendance-register.csv?month=${month}`,
+  registerXlsxUrl: (month) => `${BASE}/reports/attendance-register.xlsx?month=${month}`,
+  registerPdfUrl: (month) => `${BASE}/reports/attendance-register.pdf?month=${month}`,
+  summaryPdfUrl: (month) => `${BASE}/reports/summary.pdf?month=${month}`,
 };
 
 /** Downloads a protected file through fetch so the bearer token travels with it. */

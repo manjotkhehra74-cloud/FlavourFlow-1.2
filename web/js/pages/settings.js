@@ -1,120 +1,162 @@
 import { api, auth } from '../api.js';
 import { ROLE_LABEL } from '../rbac.js';
-import { avatar, emptyState, esc, formatDate, icon, loadingRows, qs, toast } from '../ui.js';
+import {
+  emptyState, esc, formatDate, icon, initials, loadingRows, modal, toast,
+} from '../ui.js';
+import {
+  APPEARANCES, LANGUAGES, TEXT_SIZES, getPrefs, labelFor, setPref,
+} from '../prefs.js';
 
-export const meta = { key: 'settings', title: 'Settings', subtitle: 'Your account and sign-in details' };
+export const meta = { key: 'settings', title: 'Settings', subtitle: 'Your account, language and appearance' };
+
+const COMPANY = 'G.D. Foods Mfg (I) Pvt. Ltd.';
+
+const row = ({ key, glyph, tone, title, subtitle, value, tag, danger }) => `
+  <button type="button" class="rowcard rowcard--action ${danger ? 'rowcard--danger' : ''}" data-row="${esc(key)}" ${tag ? 'disabled' : ''}>
+    <span class="rowcard__icon ${tone}">${icon(glyph, 18)}</span>
+    <div class="rowcard__body">
+      <strong>${esc(title)}</strong>
+      ${subtitle ? `<small>${esc(subtitle)}</small>` : ''}
+    </div>
+    ${tag ? `<span class="pill pill--soon">${esc(tag)}</span>` : `<span class="rowcard__value">${value ? esc(value) : ''}${icon('arrowRight', 16)}</span>`}
+  </button>`;
+
+/** A radio-style chooser used for language, appearance and text size. */
+async function choose(title, hint, options, current) {
+  const result = await modal({
+    title,
+    submitLabel: 'Close',
+    body: `${hint ? `<p class="muted small" style="margin-top:-6px">${esc(hint)}</p>` : ''}
+      <div class="stack">${options.map((option) => `
+        <button type="button" class="rowcard rowcard--action ${option.value === current ? 'is-active' : ''}" data-pick="${esc(option.value)}">
+          <div class="rowcard__body"><strong>${esc(option.label)}</strong></div>
+          ${option.value === current ? `<span class="t-green">${icon('circleCheck', 18)}</span>` : ''}
+        </button>`).join('')}</div>`,
+    onMount: (form, close) => {
+      form.querySelectorAll('[data-pick]').forEach((button) => button.addEventListener('click', () => close({ picked: button.dataset.pick })));
+    },
+  });
+  return result?.picked ?? null;
+}
 
 export async function render(root, context) {
   root.innerHTML = loadingRows(4);
   let me;
-  try { me = (await api.me()).user; } catch (error) { root.innerHTML = emptyState('Could not load your account', error.message); return; }
+  try { me = (await api.me()).user; }
+  catch (error) { root.innerHTML = `<section class="card">${emptyState('Could not load your account', error.message)}</section>`; return; }
 
-  root.innerHTML = `
-    <section class="card">
-      <div class="row" style="gap:14px">
-        ${avatar(me.name, null, 'avatar--lg')}
-        <div>
-          <h3>${esc(me.name)}</h3>
-          <div class="muted small">${esc(ROLE_LABEL[me.role] || me.role)} · joined ${esc(formatDate(me.created_at))}</div>
+  paint();
+
+  function paint() {
+    const prefs = getPrefs();
+    root.innerHTML = `
+      <section class="hero">
+        <div class="row" style="gap:16px;flex-wrap:nowrap">
+          <span class="avatar avatar--lg" style="width:70px;height:70px;background:#fff;color:var(--blue);border:3px solid rgba(255,255,255,.7)">${esc(initials(me.name).toUpperCase())}</span>
+          <div style="min-width:0">
+            <h2 style="font-size:24px;letter-spacing:-.03em">${esc(me.name)}</h2>
+            <div class="small" style="opacity:.92;margin-top:4px">${esc(ROLE_LABEL[me.role] || me.role)} · ${esc(COMPANY)}</div>
+            <div class="small" style="opacity:.8;margin-top:2px">${esc(me.phone || 'No phone')} · joined ${esc(formatDate(me.created_at))}</div>
+          </div>
         </div>
-      </div>
-    </section>
-
-    <div class="grid grid--2">
-      <section class="card">
-        <div class="card__head"><h3>Sign-in details</h3></div>
-        <form class="stack" data-profile>
-          <div class="field">
-            <label for="set-name">Full name</label>
-            <input id="set-name" name="name" value="${esc(me.name)}" required />
-          </div>
-          <div class="field">
-            <label for="set-phone">Phone number</label>
-            <input id="set-phone" name="phone" type="tel" value="${esc(me.phone || '')}" placeholder="+91XXXXXXXXXX" required />
-            <span class="field__hint">This is your login id. Changing it changes how you sign in.</span>
-          </div>
-          <div class="field">
-            <label for="set-email">Email</label>
-            <input id="set-email" name="email" type="email" value="${esc(me.email || '')}" placeholder="Optional" />
-          </div>
-          <p class="small" data-profile-error style="color:var(--red);display:none"></p>
-          <button class="btn" type="submit">Save details</button>
-        </form>
       </section>
 
       <section class="card">
-        <div class="card__head"><h3>Change password</h3></div>
-        <form class="stack" data-password>
-          <div class="field">
-            <label for="set-current">Current password</label>
-            <input id="set-current" name="currentPassword" type="password" autocomplete="current-password" required />
-          </div>
-          <div class="field">
-            <label for="set-new">New password</label>
-            <input id="set-new" name="newPassword" type="password" autocomplete="new-password" minlength="8" required />
-            <span class="field__hint">At least 8 characters. Use something you have not used here before.</span>
-          </div>
-          <div class="field">
-            <label for="set-confirm">Confirm new password</label>
-            <input id="set-confirm" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" required />
-          </div>
-          <p class="small" data-password-error style="color:var(--red);display:none"></p>
-          <button class="btn" type="submit">Change password</button>
-        </form>
+        <div class="card__head"><h3>Account</h3></div>
+        <div class="stack">
+          ${row({ key: 'profile', glyph: 'users', tone: 'tone-blue', title: 'My profile', subtitle: 'Name, phone number and email' })}
+          ${row({ key: 'password', glyph: 'shield', tone: 'tone-amber', title: 'Change password', subtitle: 'Update your sign-in password' })}
+          ${row({ key: 'biometric', glyph: 'finger', tone: 'tone-green', title: 'Biometric login', subtitle: 'Unlock with fingerprint or face', tag: 'Coming soon' })}
+          ${row({ key: 'twofactor', glyph: 'shield', tone: 'tone-violet', title: 'Two-factor authentication', subtitle: 'An extra code every time you sign in', tag: 'Coming soon' })}
+        </div>
       </section>
-    </div>
 
-    <section class="card">
-      <div class="card__head"><h3>Locked out of an account?</h3></div>
-      <p class="muted small">A super admin or HR manager can reset any password from <a href="#/users">Users</a>.
-      If every administrator is locked out, run this once on the VPS:</p>
-      <pre class="small" style="background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px;overflow:auto;margin-top:10px">cli=/opt/hrmate/server/tools/hrmate-cli.sh
+      <section class="card">
+        <div class="card__head"><h3>Display</h3></div>
+        <div class="stack">
+          ${row({ key: 'language', glyph: 'scale', tone: 'tone-blue', title: 'Language', subtitle: 'Used across the app', value: labelFor(LANGUAGES, prefs.language) })}
+          ${row({ key: 'appearance', glyph: 'sun', tone: 'tone-amber', title: 'Appearance', subtitle: 'Light, dark or follow the device', value: labelFor(APPEARANCES, prefs.appearance) })}
+          ${row({ key: 'textSize', glyph: 'reports', tone: 'tone-green', title: 'Text size', subtitle: 'Make everything easier to read', value: labelFor(TEXT_SIZES, prefs.textSize) })}
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card__head"><h3>Locked out of an account?</h3></div>
+        <p class="muted small">A super admin or HR manager can reset any password from <a href="#/users">Users</a>.
+        If every administrator is locked out, run this once on the VPS:</p>
+        <pre class="small" style="background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px;overflow:auto;margin-top:10px">cli=/opt/hrmate/server/tools/hrmate-cli.sh
 sudo $cli tools/reset-credentials.js --list
 sudo $cli tools/reset-credentials.js --id 1 --password 'a-new-long-password'</pre>
-    </section>`;
+      </section>
 
-  const profileForm = qs('[data-profile]', root);
-  const profileError = qs('[data-profile-error]', root);
-  profileForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const button = qs('button', profileForm);
-    const values = Object.fromEntries(new FormData(profileForm).entries());
-    profileError.style.display = 'none';
-    button.disabled = true;
+      <section class="card">
+        <div class="stack">
+          ${row({ key: 'signout', glyph: 'logout', tone: 'tone-red', title: 'Sign out', subtitle: 'End this session on this device', danger: true })}
+        </div>
+        <p class="muted small" style="text-align:center;margin-top:14px">HRMate · ${esc(COMPANY)}</p>
+      </section>`;
+
+    root.querySelectorAll('[data-row]').forEach((button) => button.addEventListener('click', () => handle(button.dataset.row)));
+  }
+
+  async function handle(key) {
+    if (key === 'profile') return editProfile();
+    if (key === 'password') return changePassword();
+    if (key === 'signout') return context.signOut();
+
+    const choices = { language: LANGUAGES, appearance: APPEARANCES, textSize: TEXT_SIZES };
+    const hints = {
+      language: 'Punjabi is the default for the plant floor. Screen labels follow this setting as translations land.',
+      appearance: 'Dark mode is easier on the eyes during night shifts.',
+      textSize: 'Larger text is helpful on smaller phones.',
+    };
+    const titles = { language: 'Language', appearance: 'Appearance', textSize: 'Text size' };
+    if (!choices[key]) return undefined;
+
+    const picked = await choose(titles[key], hints[key], choices[key], getPrefs()[key]);
+    if (!picked) return undefined;
+    setPref(key, picked);
+    toast(`${titles[key]} set to ${labelFor(choices[key], picked)}`, 'ok');
+    return paint();
+  }
+
+  async function editProfile() {
+    const result = await modal({
+      title: 'My profile',
+      submitLabel: 'Save details',
+      tone: 'btn--gradient',
+      body: `<div class="field"><label>Full name</label><input name="name" value="${esc(me.name)}" required /></div>
+        <div class="field"><label>Phone number</label><input name="phone" type="tel" value="${esc(me.phone || '')}" placeholder="+91XXXXXXXXXX" required />
+          <span class="field__hint">This is your login id. Changing it changes how you sign in.</span></div>
+        <div class="field"><label>Email</label><input name="email" type="email" value="${esc(me.email || '')}" placeholder="Optional" /></div>`,
+    });
+    if (!result) return;
     try {
-      const result = await api.updateMe({ name: values.name.trim(), phone: values.phone.trim(), email: values.email.trim() || null });
-      auth.save(result.token, { id: result.user.id, name: result.user.name, role: result.user.role });
-      context.updateIdentity(result.user);
+      const saved = await api.updateMe({ name: result.name.trim(), phone: result.phone.trim(), email: result.email.trim() || null });
+      auth.save(saved.token, { id: saved.user.id, name: saved.user.name, role: saved.user.role });
+      context.updateIdentity(saved.user);
+      me = saved.user;
       toast('Sign-in details updated', 'ok');
-      context.reload();
-    } catch (error) {
-      profileError.textContent = error.message;
-      profileError.style.display = 'block';
-    } finally { button.disabled = false; }
-  });
+      paint();
+    } catch (error) { toast(error.message, 'err'); }
+  }
 
-  const passwordForm = qs('[data-password]', root);
-  const passwordError = qs('[data-password-error]', root);
-  passwordForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const button = qs('button', passwordForm);
-    const values = Object.fromEntries(new FormData(passwordForm).entries());
-    passwordError.style.display = 'none';
-    if (values.newPassword !== values.confirmPassword) {
-      passwordError.textContent = 'The new passwords do not match.';
-      passwordError.style.display = 'block';
-      return;
-    }
-    button.disabled = true;
+  async function changePassword() {
+    const result = await modal({
+      title: 'Change password',
+      submitLabel: 'Change password',
+      tone: 'btn--gradient',
+      body: `<div class="field"><label>Current password</label><input name="currentPassword" type="password" autocomplete="current-password" required /></div>
+        <div class="field"><label>New password</label><input name="newPassword" type="password" autocomplete="new-password" minlength="8" required />
+          <span class="field__hint">At least 8 characters. Use something you have not used here before.</span></div>
+        <div class="field"><label>Confirm new password</label><input name="confirmPassword" type="password" autocomplete="new-password" minlength="8" required /></div>`,
+    });
+    if (!result) return;
+    if (result.newPassword !== result.confirmPassword) { toast('The new passwords do not match', 'err'); return; }
     try {
-      const result = await api.changePassword({ currentPassword: values.currentPassword, newPassword: values.newPassword });
-      if (result.token) auth.save(result.token, auth.user);
-      passwordForm.reset();
+      const saved = await api.changePassword({ currentPassword: result.currentPassword, newPassword: result.newPassword });
+      if (saved.token) auth.save(saved.token, auth.user);
       toast('Password changed', 'ok');
-      context.refreshBadges();
-    } catch (error) {
-      passwordError.textContent = error.message;
-      passwordError.style.display = 'block';
-    } finally { button.disabled = false; }
-  });
+    } catch (error) { toast(error.message, 'err'); }
+  }
 }

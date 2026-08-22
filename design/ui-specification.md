@@ -72,3 +72,21 @@ with an initials avatar, role pill, active status and an overflow menu. "Add use
 
 Biometric login and two-factor authentication are shown as rows with a "Coming soon" tag
 until the mobile client lands.
+
+## Implementation notes
+
+Batch 1 shipped the dashboard, attendance and leave screens; batch 2 the employee
+directory, employee profile and user management; batch 3 reports, notifications and
+settings.
+
+Display preferences (language, appearance, text size) live in `web/js/prefs.js` and are
+stored per device in `localStorage` under `hrmate.prefs`. Appearance drives a
+`data-theme="dark"` attribute on `<html>`; the dark palette is a variable override at the
+bottom of `web/css/styles.css`.
+
+Exports are generated server-side with no third-party dependencies, because the production
+VM cannot reliably build native npm modules:
+
+- `server/src/lib/zip.js` — a small deflate ZIP writer.
+- `server/src/lib/xlsx.js` — a single-sheet .xlsx writer (inline strings, bold header, frozen top row).
+- `server/src/lib/pdf.js` — a paginated base-14 Helvetica table PDF with an HRMate-blue banner.

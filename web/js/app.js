@@ -1,6 +1,7 @@
 import { api, auth } from './api.js';
 import { ROLE_LABEL, can } from './rbac.js';
 import { avatar, el, esc, icon, initials, qs, toast } from './ui.js';
+import { applyPrefs, watchSystemTheme } from './prefs.js';
 import { renderLogin } from './pages/login.js';
 import * as dashboard from './pages/dashboard.js';
 import * as attendance from './pages/attendance.js';
@@ -23,6 +24,8 @@ const PAGE_PERMISSION = {
 const root = qs('#app');
 const state = { user: null, nav: [], unread: 0, wired: false, badgeTimer: null };
 
+applyPrefs();
+watchSystemTheme();
 start();
 
 async function start() {
@@ -85,7 +88,7 @@ async function showShell() {
   </div>`));
 
   const shell = qs('.shell', root);
-  qs('[data-logout]', root).addEventListener('click', () => { auth.clear(); clearInterval(state.badgeTimer); toast('Signed out'); showLogin(); });
+  qs('[data-logout]', root).addEventListener('click', signOut);
   qs('[data-menu]', root).addEventListener('click', () => shell.classList.toggle('nav-open'));
   qs('[data-close-nav]', root).addEventListener('click', () => shell.classList.remove('nav-open'));
 
@@ -94,6 +97,13 @@ async function showShell() {
   state.badgeTimer = setInterval(refreshBadges, 60000);
   await refreshBadges();
   await route();
+}
+
+function signOut() {
+  auth.clear();
+  clearInterval(state.badgeTimer);
+  toast('Signed out');
+  showLogin();
 }
 
 /** Keeps the sidebar and topbar in step after the user edits their own profile. */
@@ -109,8 +119,8 @@ function updateIdentity(user) {
 
 async function refreshBadges() {
   try {
-    const { notifications: items } = await api.notifications();
-    state.unread = items.filter((item) => !item.read_at).length;
+    const data = await api.notifications();
+    state.unread = data.unread ?? data.notifications.filter((item) => !item.read_at).length;
   } catch { return; }
   [qs('[data-nav-badge]'), qs('[data-bell-badge]')].forEach((node) => {
     if (!node) return;
@@ -139,7 +149,7 @@ async function route() {
   window.scrollTo({ top: 0 });
 
   try {
-    await active.render(outlet, { user: state.user, reload: route, refreshBadges, updateIdentity }, params);
+    await active.render(outlet, { user: state.user, reload: route, refreshBadges, updateIdentity, signOut }, params);
   } catch (error) {
     outlet.innerHTML = `<section class="card"><p class="muted">${esc(error.message)}</p></section>`;
   }

@@ -118,7 +118,11 @@ export function toast(message, kind = '') {
   setTimeout(() => { node.style.opacity = '0'; node.style.transition = 'opacity .25s'; setTimeout(() => node.remove(), 250); }, 3200);
 }
 
-/** Renders a modal and resolves with the submitted FormData (or null when dismissed). */
+/**
+ * Renders a modal and resolves with the submitted FormData (or null when dismissed).
+ * `onMount(form, close)` receives the form element and a `close(value)` callback so that
+ * action sheets can resolve with something other than form data.
+ */
 export function modal({ title, body, submitLabel = 'Save', tone = '', onMount }) {
   return new Promise((resolve) => {
     const backdrop = el(`<div class="modal-backdrop"><form class="modal">
@@ -140,7 +144,7 @@ export function modal({ title, body, submitLabel = 'Save', tone = '', onMount })
     });
     document.addEventListener('keydown', onKey);
     qs('#modal-root').append(backdrop);
-    onMount?.(backdrop.querySelector('form'), () => finish(null));
+    onMount?.(backdrop.querySelector('form'), finish);
     backdrop.querySelector('input, select, textarea')?.focus();
   });
 }
