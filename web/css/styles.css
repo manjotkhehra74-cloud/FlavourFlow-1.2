@@ -571,3 +571,57 @@ tbody tr.clickable:hover { background: #f8fafc; }
 [data-theme="dark"] tbody tr:nth-child(even) { background: rgba(255, 255, 255, .02); }
 [data-theme="dark"] .skeleton { background: linear-gradient(90deg, #162034, #1d2942, #162034); }
 [data-theme="dark"] img { filter: brightness(.92); }
+
+/* ---------- Login: language chips, input affordances ---------- */
+.login__lang { justify-content: center; margin-bottom: 2px; }
+.login__lang .chip { padding: 6px 12px; font-size: 12.5px; }
+.field__wrap { position: relative; display: flex; align-items: center; }
+.field__wrap input { width: 100%; padding-left: 42px; }
+.field__wrap input[type="password"], .field__wrap input#password { padding-right: 46px; }
+.field__lead {
+  position: absolute; left: 13px; display: inline-flex; color: var(--muted); pointer-events: none;
+}
+.field__toggle {
+  position: absolute; right: 8px; display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border: 0; border-radius: 9px; background: transparent;
+  color: var(--muted); cursor: pointer;
+}
+.field__toggle:hover { background: var(--bg); color: var(--ink-2); }
+.field__toggle.is-on { color: var(--blue); }
+.login__error {
+  margin: 0; padding: 10px 12px; border-radius: 12px; color: #b91c1c;
+  background: var(--red-soft); border: 1px solid rgba(239, 68, 68, .25);
+}
+.login__error[hidden] { display: none; }
+
+/* ---------- Offline banner ---------- */
+.offline-bar {
+  position: fixed; inset: 0 0 auto 0; z-index: 90;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 9px 16px; background: #b91c1c; color: #fff;
+  font-size: 13px; box-shadow: 0 6px 20px rgba(185, 28, 28, .3);
+}
+.offline-bar span { opacity: .88; }
+.offline-bar + .shell .topbar { top: 38px; }
+
+/* ---------- Mobile-web tuning ---------- */
+@media (max-width: 640px) {
+  .btn, .chip, .icon-btn, .tile, .rowcard--action, .list-card [data-edit] {
+    /* Comfortable thumb targets on the shop floor. */
+    min-height: 40px;
+  }
+  .chip { min-height: 36px; }
+  .grid--2, .grid--3 { grid-template-columns: 1fr; }
+  .table-wrap { margin-inline: -16px; padding-inline: 16px; }
+  .hero h2 { font-size: 34px; }
+  .modal { max-height: 88vh; }
+  .modal__body { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .login__hero { display: none; }
+}
+input, select, textarea {
+  /* iOS Safari zooms in on focus below 16px. */
+  font-size: max(16px, 1em);
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

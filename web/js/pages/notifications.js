@@ -1,6 +1,7 @@
 import { api } from '../api.js';
 import { can } from '../rbac.js';
 import { emptyState, esc, icon, loadingRows, modal, qs, relativeTime, toast } from '../ui.js';
+import { t } from '../i18n.js';
 
 export const meta = { key: 'notifications', title: 'Notifications', subtitle: 'Broadcasts and audit alerts' };
 
@@ -23,14 +24,14 @@ export async function render(root, context) {
   root.innerHTML = `
     <section class="card">
       <div class="card__head">
-        <h3>Notifications</h3>
+        <h3>${esc(t('Notifications'))}</h3>
         <span class="pill pill--info" data-unread style="margin-left:8px">0 unread</span>
         <button class="btn btn--sm btn--ghost spacer" data-read-all>${icon('check', 15)} Mark all read</button>
       </div>
       <div class="chips" style="margin-top:4px">
-        <button class="chip is-active" data-filter="all">All</button>
-        <button class="chip" data-filter="unread">Unread</button>
-        <button class="chip" data-filter="broadcast">Announcements</button>
+        <button class="chip is-active" data-filter="all">${esc(t('All'))}</button>
+        <button class="chip" data-filter="unread">${esc(t('Unread'))}</button>
+        <button class="chip" data-filter="broadcast">${esc(t('Announcements'))}</button>
       </div>
       ${can(context.user.role, 'settings.manage') ? `<button class="btn btn--gradient btn--lg" data-broadcast style="width:100%;margin-top:14px">${icon('bell', 18)} Send announcement</button>` : ''}
     </section>
@@ -39,23 +40,23 @@ export async function render(root, context) {
   const body = qs('[data-body]', root);
 
   qs('[data-read-all]', root).addEventListener('click', async () => {
-    try { await api.readAll(); toast('All notifications marked read', 'ok'); await load(); context.refreshBadges(); }
+    try { await api.readAll(); toast(t('All notifications marked read'), 'ok'); await load(); context.refreshBadges(); }
     catch (error) { toast(error.message, 'err'); }
   });
 
   qs('[data-broadcast]', root)?.addEventListener('click', async () => {
     const result = await modal({
-      title: 'Send announcement',
-      submitLabel: 'Send to everyone',
+      title: t('Send announcement'),
+      submitLabel: t('Send to everyone'),
       tone: 'btn--gradient',
-      body: `<p class="muted small" style="margin-top:-6px">Every active account receives this, and the send is written to the audit trail.</p>
-        <div class="field"><label>Title</label><input name="title" required maxlength="80" placeholder="Holiday on 2 October" /></div>
-        <div class="field"><label>Message</label><textarea name="body" required rows="4" placeholder="The plant will remain closed for Gandhi Jayanti."></textarea></div>`,
+      body: `<p class="muted small" style="margin-top:-6px">${esc(t('Every active account receives this, and the send is written to the audit trail.'))}</p>
+        <div class="field"><label>${esc(t('Title'))}</label><input name="title" required maxlength="80" placeholder="Holiday on 2 October" /></div>
+        <div class="field"><label>${esc(t('Message'))}</label><textarea name="body" required rows="4" placeholder="The plant will remain closed for Gandhi Jayanti."></textarea></div>`,
     });
     if (!result) return;
     try {
       const { recipients } = await api.broadcast(result);
-      toast(`Announcement sent to ${recipients} ${recipients === 1 ? 'person' : 'people'}`, 'ok');
+      toast(`${t('Announcement sent')} · ${recipients} ${recipients === 1 ? t('person') : t('people')}`, 'ok');
       await load();
       context.refreshBadges();
     } catch (error) { toast(error.message, 'err'); }
@@ -75,10 +76,10 @@ export async function render(root, context) {
       const data = await api.notifications();
       state.items = data.notifications;
       const unread = data.unread ?? state.items.filter((item) => !item.read_at).length;
-      qs('[data-unread]', root).textContent = `${unread} unread`;
+      qs('[data-unread]', root).textContent = `${unread} ${t('unread')}`;
       qs('[data-unread]', root).style.display = unread ? '' : 'none';
       paint();
-    } catch (error) { body.innerHTML = `<section class="card">${emptyState('Could not load notifications', error.message)}</section>`; }
+    } catch (error) { body.innerHTML = `<section class="card">${emptyState(t('Could not load notifications'), error.message)}</section>`; }
   }
 
   function paint() {
@@ -90,7 +91,7 @@ export async function render(root, context) {
     if (!items.length) {
       body.innerHTML = `<section class="card">${emptyState(
         state.filter === 'unread' ? 'You are all caught up' : 'Nothing here yet',
-        'Announcements, leave decisions and audit alerts land on this screen.',
+        t('Announcements, leave decisions and audit alerts land on this screen.'),
       )}</section>`;
       return;
     }
@@ -99,7 +100,7 @@ export async function render(root, context) {
     const groups = new Map();
     items.forEach((item) => {
       const key = dayKey(item.created_at);
-      const label = key === stamp ? 'Today' : 'Earlier';
+      const label = key === stamp ? t('Today') : t('Earlier');
       if (!groups.has(label)) groups.set(label, []);
       groups.get(label).push(item);
     });

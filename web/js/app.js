@@ -2,6 +2,7 @@ import { api, auth } from './api.js';
 import { ROLE_LABEL, can } from './rbac.js';
 import { avatar, el, esc, icon, initials, qs, toast } from './ui.js';
 import { applyPrefs, watchSystemTheme } from './prefs.js';
+import { loadLanguage, t } from './i18n.js';
 import { renderLogin } from './pages/login.js';
 import * as dashboard from './pages/dashboard.js';
 import * as attendance from './pages/attendance.js';
@@ -25,6 +26,7 @@ const root = qs('#app');
 const state = { user: null, nav: [], unread: 0, wired: false, badgeTimer: null };
 
 applyPrefs();
+loadLanguage();
 watchSystemTheme();
 start();
 
@@ -57,30 +59,30 @@ async function showShell() {
     <aside class="sidebar">
       <div class="sidebar__brand">
         <img src="/assets/hrmate-logo.png" alt="" />
-        <span><strong>HRMate</strong><small>G.D. Foods Mfg (I)</small></span>
+        <span><strong>${esc(t('HRMate'))}</strong><small>${esc(t('G.D. Foods Mfg (I)'))}</small></span>
       </div>
       <nav class="nav">
-        ${visible.map((item) => `<a href="#/${item.key}" data-route="${item.key}">${icon(NAV_ICON[item.key] || 'dashboard')} ${esc(item.label)}</a>`).join('')}
-        <a href="#/notifications" data-route="notifications">${icon('bell')} Notifications <span class="nav__badge" data-nav-badge hidden>0</span></a>
-        <a href="#/settings" data-route="settings">${icon('settings')} Settings</a>
+        ${visible.map((item) => `<a href="#/${item.key}" data-route="${item.key}">${icon(NAV_ICON[item.key] || "dashboard")} ${esc(t(item.label))}</a>`).join('')}
+        <a href="#/notifications" data-route="notifications">${icon('bell')} ${esc(t('Notifications'))} <span class="nav__badge" data-nav-badge hidden>0</span></a>
+        <a href="#/settings" data-route="settings">${icon('settings')} ${esc(t('Settings'))}</a>
       </nav>
       <div class="sidebar__foot">
-        <a class="sidebar__user" href="#/settings" title="Account settings">
+        <a class="sidebar__user" href="#/settings" title="${esc(t('Account settings'))}">
           ${avatar(state.user.name, null)}
           <div><strong>${esc(state.user.name)}</strong><small>${esc(ROLE_LABEL[state.user.role] || state.user.role)}</small></div>
         </a>
-        <button class="btn btn--ghost btn--block" data-logout>${icon('logout', 17)} Sign out</button>
+        <button class="btn btn--ghost btn--block" data-logout>${icon('logout', 17)} ${esc(t('Sign out'))}</button>
       </div>
     </aside>
     <div class="backdrop" data-close-nav></div>
     <main class="main">
       <header class="topbar">
         <button class="icon-btn menu-btn" data-menu>${icon('menu')}</button>
-        <div><h1 data-title>Dashboard</h1><small data-subtitle>Today at a glance</small></div>
+        <div><h1 data-title>${esc(t('Dashboard'))}</h1><small data-subtitle>${esc(t('Today at a glance'))}</small></div>
         <div class="topbar__actions">
-          <a class="icon-btn" href="#/notifications" title="Notifications">${icon('bell')}<span class="dot" data-bell-badge hidden>0</span></a>
-          <a class="icon-btn" href="#/settings" title="Settings">${icon('settings')}</a>
-          <a href="#/settings" title="Account settings">${avatar(state.user.name, null)}</a>
+          <a class="icon-btn" href="#/notifications" title="${esc(t('Notifications'))}">${icon('bell')}<span class="dot" data-bell-badge hidden>0</span></a>
+          <a class="icon-btn" href="#/settings" title="${esc(t('Settings'))}">${icon('settings')}</a>
+          <a href="#/settings" title="${esc(t('Account settings'))}">${avatar(state.user.name, null)}</a>
         </div>
       </header>
       <div class="content" data-outlet></div>
@@ -92,17 +94,37 @@ async function showShell() {
   qs('[data-menu]', root).addEventListener('click', () => shell.classList.toggle('nav-open'));
   qs('[data-close-nav]', root).addEventListener('click', () => shell.classList.remove('nav-open'));
 
-  if (!state.wired) { window.addEventListener('hashchange', route); state.wired = true; }
+  if (!state.wired) {
+    window.addEventListener('hashchange', route);
+    window.addEventListener('offline', paintConnection);
+    window.addEventListener('online', () => { paintConnection(); refreshBadges(); route(); });
+    state.wired = true;
+  }
+  paintConnection();
   clearInterval(state.badgeTimer);
   state.badgeTimer = setInterval(refreshBadges, 60000);
   await refreshBadges();
   await route();
 }
 
+/** A single sticky bar rather than a toast per failed request. */
+function paintConnection() {
+  const existing = qs('[data-offline]');
+  if (navigator.onLine) {
+    if (existing) { toast(t('Back online'), 'ok'); existing.remove(); }
+    return;
+  }
+  if (existing) return;
+  document.body.prepend(el(`<div class="offline-bar" data-offline role="status">
+    ${icon('close', 15)} <strong>${esc(t('No internet connection'))}</strong>
+    <span>${esc(t('You are offline. HRMate will reconnect on its own.'))}</span>
+  </div>`));
+}
+
 function signOut() {
   auth.clear();
   clearInterval(state.badgeTimer);
-  toast('Signed out');
+  toast(t('Signed out'));
   showLogin();
 }
 
@@ -143,9 +165,9 @@ async function route() {
   const active = allowed ? page : PAGES.dashboard;
   qs('.shell')?.classList.remove('nav-open');
   document.querySelectorAll('[data-route]').forEach((link) => link.classList.toggle('active', link.dataset.route === active.meta.key));
-  qs('[data-title]').textContent = active.meta.title;
-  qs('[data-subtitle]').textContent = active.meta.subtitle;
-  document.title = `${active.meta.title} · HRMate`;
+  qs('[data-title]').textContent = t(active.meta.title);
+  qs('[data-subtitle]').textContent = t(active.meta.subtitle);
+  document.title = `${t(active.meta.title)} · HRMate`;
   window.scrollTo({ top: 0 });
 
   try {

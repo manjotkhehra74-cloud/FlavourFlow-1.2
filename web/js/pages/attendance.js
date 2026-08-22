@@ -4,6 +4,7 @@ import {
   avatar, currentPosition, emptyState, esc, formatDate, formatTime, icon, loadingRows,
   modal, monthIso, qs, shiftDays, shiftMonth, statusPill, toast, todayIso, weekOf,
 } from '../ui.js';
+import { t } from '../i18n.js';
 
 export const meta = { key: 'attendance', title: 'Attendance', subtitle: 'Punches, register and manual entries' };
 
@@ -43,7 +44,7 @@ export async function render(root, context) {
     try {
       if (state.tab === 'mine') { state.mine = await api.attendanceMe(state.month); paintMine(); }
       else { state.register = (await api.attendanceRegister(state.registerMonth)).records; paintRegister(); }
-    } catch (error) { panel.innerHTML = emptyState('Could not load attendance', error.message); }
+    } catch (error) { panel.innerHTML = emptyState(t('Could not load attendance'), error.message); }
   }
 
   /* ---------------- my attendance ---------------- */
@@ -51,7 +52,7 @@ export async function render(root, context) {
   function paintMine() {
     const data = state.mine;
     if (!data.employee) {
-      panel.innerHTML = `<section class="card">${emptyState('No employee profile linked', 'Ask HR to link your login to an employee record, then punching will appear here.')}</section>`;
+      panel.innerHTML = `<section class="card">${emptyState(t('No employee profile linked'), 'Ask HR to link your login to an employee record, then punching will appear here.')}</section>`;
       return;
     }
 
@@ -65,7 +66,7 @@ export async function render(root, context) {
     panel.innerHTML = `
       <section class="card">
         <div class="week">
-          <button class="week__nav" data-week="-7" title="Previous week">${icon('arrowLeft', 16)}</button>
+          <button class="week__nav" data-week="-7" title="${esc(t('Previous week'))}">${icon('arrowLeft', 16)}</button>
           ${days.map((day) => {
             const dayRecord = byDate.get(day);
             const future = day > todayIso();
@@ -76,7 +77,7 @@ export async function render(root, context) {
               <i></i>
             </button>`;
           }).join('')}
-          <button class="week__nav" data-week="7" title="Next week">${icon('arrowRight', 16)}</button>
+          <button class="week__nav" data-week="7" title="${esc(t('Next week'))}">${icon('arrowRight', 16)}</button>
         </div>
         <p class="week__title muted small" style="margin-top:10px">${esc(formatDate(days[0], { day: 'numeric', month: 'short' }))} – ${esc(formatDate(days[6], { day: 'numeric', month: 'short', year: 'numeric' }))}</p>
       </section>
@@ -85,24 +86,24 @@ export async function render(root, context) {
         <div class="punchline">
           <div class="punchline__row ${record?.punch_in_at ? 'is-done' : ''}">
             <span class="punchline__icon ${record?.punch_in_at ? 'tone-green' : 'tone-blue'}">${icon('signIn', 21)}</span>
-            <div><small>${record?.punch_in_at ? 'Punched in' : 'Punch in'}</small><strong>${esc(formatTime(record?.punch_in_at))}</strong></div>
+            <div><small>${record?.punch_in_at ? 'Punched in' : t('Punch in')}</small><strong>${esc(formatTime(record?.punch_in_at))}</strong></div>
           </div>
           <div class="punchline__link"><span><i></i></span></div>
           <div class="punchline__row ${record?.punch_out_at ? 'is-done' : ''}">
             <span class="punchline__icon ${record?.punch_out_at ? 'tone-green' : 'tone-blue'}" style="${record?.punch_out_at ? '' : 'background:#f1f5f9;color:var(--muted)'}">${icon('signOut', 21)}</span>
-            <div><small>${record?.punch_out_at ? 'Punched out' : 'Punch out'}</small><strong>${esc(formatTime(record?.punch_out_at))}</strong></div>
+            <div><small>${record?.punch_out_at ? 'Punched out' : t('Punch out')}</small><strong>${esc(formatTime(record?.punch_out_at))}</strong></div>
           </div>
         </div>
 
         <div class="punchline__meta">
           <span class="stat__icon tone-blue">${icon('pin')}</span>
           <div style="flex:1">
-            <strong class="small" style="color:${record?.in_latitude ? '#16a34a' : 'var(--muted)'}">${record?.in_latitude ? 'GPS verified' : 'No GPS recorded'}</strong>
-            <div class="muted small">${record?.in_latitude ? `${record.in_latitude.toFixed(4)}, ${record.in_longitude?.toFixed(4)}` : 'Location is captured at punch-in'}</div>
+            <strong class="small" style="color:${record?.in_latitude ? '#16a34a' : 'var(--muted)'}">${record?.in_latitude ? 'GPS verified' : t('No GPS recorded')}</strong>
+            <div class="muted small">${record?.in_latitude ? `${record.in_latitude.toFixed(4)}, ${record.in_longitude?.toFixed(4)}` : t('Location is captured at punch-in')}</div>
           </div>
           ${record?.in_selfie_url
             ? `<span class="punchline__selfie"><img src="${esc(record.in_selfie_url)}" alt="Punch-in selfie" /><b>${icon('check', 11)}</b></span>`
-            : `<span class="punchline__selfie" title="No selfie">${avatar(data.employee.name, data.employee.photo_url)}</span>`}
+            : `<span class="punchline__selfie" title="${esc(t('No selfie'))}">${avatar(data.employee.name, data.employee.photo_url)}</span>`}
         </div>
 
         ${isToday ? `<button class="btn btn--lg btn--block btn--gradient" style="margin-top:16px" data-punch="${state_}" ${state_ === 'done' ? 'disabled' : ''}>
@@ -116,7 +117,7 @@ export async function render(root, context) {
 
       <section class="card">
         <div class="card__head">
-          <h3>This month</h3>
+          <h3>${esc(t('This month'))}</h3>
           <div class="row spacer" style="gap:6px">
             <button class="week__nav" data-month="-1">${icon('arrowLeft', 16)}</button>
             <span class="small" style="font-weight:600;min-width:96px;text-align:center">${esc(formatDate(`${state.month}-01`, { month: 'long', year: 'numeric' }))}</span>
@@ -124,17 +125,17 @@ export async function render(root, context) {
           </div>
         </div>
         <div class="summary">
-          <div><strong class="t-green">${summary.present}</strong><small>Present</small></div>
-          <div><strong class="t-amber">${summary.late}</strong><small>Late</small></div>
-          <div><strong class="t-blue">${summary.half_day}</strong><small>Half day</small></div>
-          <div><strong class="t-grey">${summary.absent}</strong><small>Absent</small></div>
+          <div><strong class="t-green">${summary.present}</strong><small>${esc(t('Present'))}</small></div>
+          <div><strong class="t-amber">${summary.late}</strong><small>${esc(t('Late'))}</small></div>
+          <div><strong class="t-blue">${summary.half_day}</strong><small>${esc(t('Half day'))}</small></div>
+          <div><strong class="t-grey">${summary.absent}</strong><small>${esc(t('Absent'))}</small></div>
         </div>
       </section>
 
       <section class="card">
-        <div class="card__head"><h3>History</h3><span class="muted small spacer">${data.records.length} entries</span></div>
+        <div class="card__head"><h3>${esc(t('History'))}</h3><span class="muted small spacer">${data.records.length} entries</span></div>
         ${data.records.length ? `<div class="table-wrap"><table>
-          <thead><tr><th>Date</th><th>Status</th><th>Punch in</th><th>Punch out</th><th>Source</th></tr></thead>
+          <thead><tr><th>${esc(t('Date'))}</th><th>${esc(t('Status'))}</th><th>${esc(t('Punch in'))}</th><th>${esc(t('Punch out'))}</th><th>${esc(t('Source'))}</th></tr></thead>
           <tbody>${data.records.map((row) => `<tr class="clickable" data-day="${row.attendance_date}">
             <td>${esc(formatDate(row.attendance_date, { weekday: 'short', day: '2-digit', month: 'short' }))}</td>
             <td>${statusPill(row.status)}</td>
@@ -142,7 +143,7 @@ export async function render(root, context) {
             <td>${esc(formatTime(row.punch_out_at))}</td>
             <td><span class="pill">${esc(row.entry_source || 'mobile')}</span></td>
           </tr>`).join('')}</tbody></table></div>`
-          : emptyState('Nothing this month', 'Punches will show up here as soon as they are recorded.')}
+          : emptyState(t('Nothing this month'), t('Punches will show up here as soon as they are recorded.'))}
       </section>`;
 
     panel.querySelectorAll('[data-day]').forEach((node) => node.addEventListener('click', () => {
@@ -183,24 +184,24 @@ export async function render(root, context) {
 
     panel.innerHTML = `<section class="card">
       <div class="card__head">
-        <h3>Team register</h3>
+        <h3>${esc(t('Team register'))}</h3>
         <div class="row spacer">
           <input type="month" value="${state.registerMonth}" data-register-month style="padding:8px 11px;border-radius:11px;border:1px solid var(--line)" />
           ${canManage ? `<button class="btn btn--sm" data-manual>${icon('plus', 15)} Manual entry</button>` : ''}
         </div>
       </div>
-      <div class="field" style="margin-bottom:12px"><input type="search" data-search value="${esc(state.search)}" placeholder="Search employee or department…" /></div>
+      <div class="field" style="margin-bottom:12px"><input type="search" data-search value="${esc(state.search)}" placeholder="${esc(t('Search employee or department…'))}" /></div>
       ${filtered.length ? `<div class="table-wrap"><table>
-        <thead><tr><th>Employee</th><th>Date</th><th>Status</th><th>Punch in</th><th>Punch out</th><th>Source</th></tr></thead>
+        <thead><tr><th>${esc(t('Employee'))}</th><th>${esc(t('Date'))}</th><th>${esc(t('Status'))}</th><th>${esc(t('Punch in'))}</th><th>${esc(t('Punch out'))}</th><th>${esc(t('Source'))}</th></tr></thead>
         <tbody>${filtered.map((row) => `<tr>
-          <td><div class="cell-user">${avatar(row.name || 'Employee', null)}<div><strong>${esc(row.name || '—')}</strong><small>${esc(row.employee_code || row.department || '')}</small></div></div></td>
+          <td><div class="cell-user">${avatar(row.name || t('Employee'), null)}<div><strong>${esc(row.name || '—')}</strong><small>${esc(row.employee_code || row.department || '')}</small></div></div></td>
           <td>${esc(formatDate(row.attendance_date, { day: '2-digit', month: 'short' }))}</td>
           <td>${statusPill(row.status)}</td>
           <td>${esc(formatTime(row.punch_in_at))}</td>
           <td>${esc(formatTime(row.punch_out_at))}</td>
           <td><span class="pill">${esc(row.entry_source || 'mobile')}</span></td>
         </tr>`).join('')}</tbody></table></div>`
-        : emptyState('No attendance records', `Nothing recorded for ${formatDate(`${state.registerMonth}-01`, { month: 'long', year: 'numeric' })}.`)}
+        : emptyState(t('No attendance records'), `Nothing recorded for ${formatDate(`${state.registerMonth}-01`, { month: 'long', year: 'numeric' })}.`)}
     </section>`;
 
     qs('[data-register-month]', panel).addEventListener('change', (event) => { state.registerMonth = event.target.value || monthIso(); load(); });
@@ -219,25 +220,25 @@ export async function render(root, context) {
 
 export async function manualEntry(onDone, preselectId) {
   let employees = [];
-  try { employees = (await api.employees()).employees; } catch { toast('Could not load employees', 'err'); return; }
+  try { employees = (await api.employees()).employees; } catch { toast(t('Could not load employees'), 'err'); return; }
   const result = await modal({
-    title: 'Manual attendance',
-    submitLabel: 'Save attendance',
+    title: t('Manual attendance'),
+    submitLabel: t('Save attendance'),
     tone: 'btn--gradient',
-    body: `<p class="muted small" style="margin-top:-6px">Mark or correct employee attendance.</p>
+    body: `<p class="muted small" style="margin-top:-6px">${esc(t('Mark or correct employee attendance.'))}</p>
     <div class="form-grid">
-      <div class="field"><label>Employee</label><select name="employeeId" required>
+      <div class="field"><label>${esc(t('Employee'))}</label><select name="employeeId" required>
         ${employees.map((employee) => `<option value="${employee.id}" ${Number(preselectId) === employee.id ? 'selected' : ''}>${esc(employee.name)}${employee.employee_code ? ` · ${esc(employee.employee_code)}` : ''}</option>`).join('')}
       </select></div>
-      <div class="field"><label>Date</label><input type="date" name="attendanceDate" value="${todayIso()}" max="${todayIso()}" required /></div>
-      <div class="field"><label>Status</label><select name="status">
-        <option value="present">Present</option><option value="late">Late</option>
-        <option value="half_day">Half day</option><option value="absent">Absent</option>
+      <div class="field"><label>${esc(t('Date'))}</label><input type="date" name="attendanceDate" value="${todayIso()}" max="${todayIso()}" required /></div>
+      <div class="field"><label>${esc(t('Status'))}</label><select name="status">
+        <option value="present">${esc(t('Present'))}</option><option value="late">${esc(t('Late'))}</option>
+        <option value="half_day">${esc(t('Half day'))}</option><option value="absent">${esc(t('Absent'))}</option>
       </select></div>
-      <div class="field"><label>In time</label><input type="time" name="punchIn" /></div>
-      <div class="field"><label>Out time</label><input type="time" name="punchOut" /></div>
+      <div class="field"><label>${esc(t('In time'))}</label><input type="time" name="punchIn" /></div>
+      <div class="field"><label>${esc(t('Out time'))}</label><input type="time" name="punchOut" /></div>
     </div>
-    <div class="field"><label>Reason</label><textarea name="reason" placeholder="Supervisor correction"></textarea></div>
+    <div class="field"><label>${esc(t('Reason'))}</label><textarea name="reason" placeholder="${esc(t('Supervisor correction'))}"></textarea></div>
     <p class="muted small">${icon('shield', 13)} This entry will be recorded in audit history.</p>`,
   });
   if (!result) return;
@@ -251,7 +252,7 @@ export async function manualEntry(onDone, preselectId) {
       punchOutAt: stamp(result.punchOut),
       reason: result.reason || null,
     });
-    toast('Attendance saved', 'ok');
+    toast(t('Attendance saved'), 'ok');
     onDone?.();
   } catch (error) { toast(error.message, 'err'); }
 }

@@ -2,11 +2,12 @@ import { api, downloadFile } from '../api.js';
 import {
   emptyState, esc, icon, loadingRows, monthIso, qs, shiftMonth, toast,
 } from '../ui.js';
+import { localeTag, t } from '../i18n.js';
 
 export const meta = { key: 'reports', title: 'Reports', subtitle: 'Monthly attendance insights and exports' };
 
 const monthName = (month) => new Date(`${month}-01T00:00:00Z`)
-  .toLocaleDateString('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  .toLocaleDateString(localeTag(), { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
 /**
  * Draws the month's attendance percentage as an SVG sparkline. Days with no attendance at
@@ -15,7 +16,7 @@ const monthName = (month) => new Date(`${month}-01T00:00:00Z`)
 function lineChart(daily) {
   const points = daily.map((day, index) => ({ index, ...day })).filter((day) => day.rate !== null);
   if (points.length < 2) {
-    return '<div class="chart chart--empty"><span>Not enough data yet for a trend line</span></div>';
+    return `<div class="chart chart--empty"><span>${esc(t('Not enough data yet for a trend line'))}</span></div>`;
   }
   const width = 640;
   const height = 150;
@@ -49,11 +50,11 @@ export async function render(root, context) {
   root.innerHTML = `
     <section class="card">
       <div class="card__head">
-        <h3>Reports</h3>
+        <h3>${esc(t('Reports'))}</h3>
         <div class="row" style="flex-wrap:nowrap;gap:6px;margin-left:auto">
-          <button class="icon-btn" data-month="-1" title="Previous month">${icon('arrowLeft', 16)}</button>
+          <button class="icon-btn" data-month="-1" title="${esc(t('Previous month'))}">${icon('arrowLeft', 16)}</button>
           <strong class="small" data-label style="min-width:120px;text-align:center">${esc(monthName(month))}</strong>
-          <button class="icon-btn" data-month="1" title="Next month">${icon('arrowRight', 16)}</button>
+          <button class="icon-btn" data-month="1" title="${esc(t('Next month'))}">${icon('arrowRight', 16)}</button>
         </div>
       </div>
     </section>
@@ -72,48 +73,48 @@ export async function render(root, context) {
     body.innerHTML = loadingRows(4);
     let data;
     try { data = await api.attendanceSummary(month); }
-    catch (error) { body.innerHTML = `<section class="card">${emptyState('Could not load the report', error.message)}</section>`; return; }
+    catch (error) { body.innerHTML = `<section class="card">${emptyState(t('Could not load the report'), error.message)}</section>`; return; }
 
     const { counts, attendanceRate, change, insights, employees, departments } = data;
     const trend = data.previousTotal === 0
       ? `No attendance recorded in ${monthName(data.previousMonth)}`
-      : `${change === 0 ? 'Level with' : `${change > 0 ? 'Up' : 'Down'} ${Math.abs(change)}% on`} ${monthName(data.previousMonth)}`;
+      : `${change === 0 ? t('Level with') : `${change > 0 ? t('Up') : t('Down')} ${Math.abs(change)}% on`} ${monthName(data.previousMonth)}`;
 
     body.innerHTML = `
       <section class="hero">
         <div class="row" style="justify-content:space-between;align-items:flex-start">
           <div>
-            <span class="hero__label">Attendance this month</span>
+            <span class="hero__label">${esc(t('Attendance this month'))}</span>
             <h2 style="font-size:44px;letter-spacing:-.04em;line-height:1.05">${esc(attendanceRate)}<span style="font-size:24px">%</span></h2>
             <div class="row" style="gap:6px;margin-top:6px;font-size:13px;opacity:.92">
               ${data.previousTotal === 0 ? '' : icon(change >= 0 ? 'trendUp' : 'trendDown', 15)} ${esc(trend)}
             </div>
           </div>
-          <span class="pill" style="background:rgba(255,255,255,.22);color:#fff">${esc(insights.workingDays)} working days</span>
+          <span class="pill" style="background:rgba(255,255,255,.22);color:#fff">${esc(insights.workingDays)} ${esc(t('working days'))}</span>
         </div>
         ${lineChart(data.daily)}
         <div class="hero__tiles">
-          <div class="hero__tile"><strong>${esc(counts.present)}</strong><small>Present</small></div>
-          <div class="hero__tile"><strong>${esc(counts.late)}</strong><small>Late</small></div>
-          <div class="hero__tile"><strong>${esc(counts.half_day)}</strong><small>Half day</small></div>
-          <div class="hero__tile"><strong>${esc(counts.absent)}</strong><small>Absent</small></div>
+          <div class="hero__tile"><strong>${esc(counts.present)}</strong><small>${esc(t('Present'))}</small></div>
+          <div class="hero__tile"><strong>${esc(counts.late)}</strong><small>${esc(t('Late'))}</small></div>
+          <div class="hero__tile"><strong>${esc(counts.half_day)}</strong><small>${esc(t('Half day'))}</small></div>
+          <div class="hero__tile"><strong>${esc(counts.absent)}</strong><small>${esc(t('Absent'))}</small></div>
         </div>
       </section>
 
       <section class="card">
-        <div class="card__head"><h3>Insights</h3></div>
+        <div class="card__head"><h3>${esc(t('Insights'))}</h3></div>
         <div class="tiles">
           <div class="tile" style="cursor:default"><span class="tile__icon tone-amber">${icon('clock')}</span>
-            <small>Avg late arrival</small><strong>${esc(insights.averageLateMinutes)}<span style="font-size:13px;color:var(--muted);font-weight:600"> min</span></strong></div>
+            <small>${esc(t('Avg late arrival'))}</small><strong>${esc(insights.averageLateMinutes)}<span style="font-size:13px;color:var(--muted);font-weight:600"> ${esc(t('min'))}</span></strong></div>
           <div class="tile" style="cursor:default"><span class="tile__icon tone-green">${icon('circleCheck')}</span>
-            <small>On-time rate</small><strong>${esc(insights.onTimeRate)}<span style="font-size:13px;color:var(--muted);font-weight:600">%</span></strong></div>
+            <small>${esc(t('On-time rate'))}</small><strong>${esc(insights.onTimeRate)}<span style="font-size:13px;color:var(--muted);font-weight:600">%</span></strong></div>
           <div class="tile" style="cursor:default"><span class="tile__icon tone-blue">${icon('umbrella')}</span>
-            <small>Leave days</small><strong>${esc(insights.leaveDays)}</strong></div>
+            <small>${esc(t('Leave days'))}</small><strong>${esc(insights.leaveDays)}</strong></div>
         </div>
       </section>
 
       <section class="card">
-        <div class="card__head"><h3>Export register</h3><span class="muted small spacer">${esc(monthName(month))}</span></div>
+        <div class="card__head"><h3>${esc(t('Export register'))}</h3><span class="muted small spacer">${esc(monthName(month))}</span></div>
         <div class="grid grid--3">
           <button class="btn btn--outline btn--lg" data-export="pdf">${icon('download', 18)} PDF</button>
           <button class="btn btn--outline btn--lg" data-export="xlsx">${icon('download', 18)} Excel</button>
@@ -123,7 +124,7 @@ export async function render(root, context) {
       </section>
 
       ${departments.length ? `<section class="card">
-        <div class="card__head"><h3>By department</h3></div>
+        <div class="card__head"><h3>${esc(t('By department'))}</h3></div>
         <div class="stack">${departments.map((row) => `
           <div>
             <div class="row" style="justify-content:space-between;font-size:13.5px;font-weight:600">
@@ -134,15 +135,15 @@ export async function render(root, context) {
       </section>` : ''}
 
       <section class="card">
-        <div class="card__head"><h3>Per employee</h3><span class="muted small spacer">${esc(employees.length)} people</span></div>
+        <div class="card__head"><h3>${esc(t('Per employee'))}</h3><span class="muted small spacer">${esc(employees.length)} ${esc(t('people'))}</span></div>
         ${employees.length ? `<div class="table-wrap"><table>
-          <thead><tr><th>Employee</th><th>Present</th><th>Late</th><th>Half</th><th>Absent</th><th>Rate</th></tr></thead>
+          <thead><tr><th>${esc(t('Employee'))}</th><th>${esc(t('Present'))}</th><th>${esc(t('Late'))}</th><th>${esc(t('Half'))}</th><th>${esc(t('Absent'))}</th><th>${esc(t('Rate'))}</th></tr></thead>
           <tbody>${employees.map((row) => `<tr>
             <td><strong>${esc(row.name)}</strong><div class="muted small">${esc(row.employee_code || '')}${row.department ? ` · ${esc(row.department)}` : ''}</div></td>
             <td class="t-green">${esc(row.present)}</td><td class="t-amber">${esc(row.late)}</td>
             <td class="t-blue">${esc(row.half_day)}</td><td class="t-grey">${esc(row.absent)}</td>
             <td><strong>${esc(row.rate)}%</strong></td>
-          </tr>`).join('')}</tbody></table></div>` : emptyState('No attendance recorded', `Nothing was marked in ${monthName(month)}.`)}
+          </tr>`).join('')}</tbody></table></div>` : emptyState(t('No attendance recorded'), `Nothing was marked in ${monthName(month)}.`)}
       </section>`;
 
     body.querySelectorAll('[data-export]').forEach((button) => button.addEventListener('click', async () => {
@@ -155,7 +156,7 @@ export async function render(root, context) {
       };
       const [url, filename] = targets[kind];
       button.disabled = true;
-      try { await downloadFile(url, filename); toast(`${filename} downloaded`, 'ok'); }
+      try { await downloadFile(url, filename); toast(`${filename} ${t('downloaded')}`, 'ok'); }
       catch (error) { toast(error.message, 'err'); }
       finally { button.disabled = false; }
     }));

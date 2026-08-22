@@ -69,3 +69,26 @@ no cache outside production, so a plain refresh picks up edits.
 - `context` provides `user`, `reload()` and `refreshBadges()`.
 - Colours, radii and shadows live in the `:root` block of `css/styles.css`; the palette
   matches the Flutter client (`#1E6FE0` blue, `#22C55E` green).
+
+## Languages
+
+`web/js/i18n.js` holds gettext-style dictionaries for Punjabi (`pa`, the default), Hindi
+(`hi`) and English (`en`). The English sentence *is* the key, so an untranslated string
+renders in English instead of showing a raw identifier. `t()` also interpolates `{name}`
+placeholders and translates the known server error messages.
+
+The dictionary is resolved at import time, so module-level `t()` calls are safe. Changing
+the language from Settings (or from the language chips on the sign-in screen) reloads the
+page so every module picks up the new dictionary.
+
+## Display preferences
+
+`web/js/prefs.js` stores language, appearance (System / Light / Dark) and text size per
+device in `localStorage` under `hrmate.prefs`. Appearance sets `data-theme` on `<html>`;
+text size sets the body font size.
+
+## Offline behaviour
+
+A red sticky bar appears when the browser goes offline and clears itself with a toast when
+the connection returns. A failed `fetch` reports "Could not reach the server" rather than a
+raw `TypeError`.

@@ -1,3 +1,5 @@
+import { t } from './i18n.js';
+
 const BASE = '/api/v1';
 const TOKEN_KEY = 'hrmate.token';
 const USER_KEY = 'hrmate.user';
@@ -19,19 +21,26 @@ async function request(method, path, body, options = {}) {
   let payload = body;
   if (body && !(body instanceof FormData)) { headers['Content-Type'] = 'application/json'; payload = JSON.stringify(body); }
 
-  const response = await fetch(`${BASE}${path}`, { method, headers, body: payload });
+  let response;
+  try {
+    response = await fetch(`${BASE}${path}`, { method, headers, body: payload });
+  } catch {
+    // A thrown fetch means the network, not the API — say so in plain language.
+    throw new ApiError(t('Could not reach the server. Check your connection and try again.'), 0);
+  }
   if (response.status === 401 && !path.startsWith('/auth/login')) {
     auth.clear();
     window.dispatchEvent(new CustomEvent('hrmate:signed-out'));
-    throw new ApiError('Session expired. Please sign in again.', 401);
+    throw new ApiError(t('Session expired. Please sign in again.'), 401);
   }
   if (options.raw) {
-    if (!response.ok) throw new ApiError('Request failed', response.status);
+    if (!response.ok) throw new ApiError(t('Request failed'), response.status);
     return response;
   }
   const text = await response.text();
   const data = text ? JSON.parse(text) : {};
-  if (!response.ok) throw new ApiError(data.error || `Request failed (${response.status})`, response.status);
+  // Server errors are English sentences; the dictionary translates the known ones.
+  if (!response.ok) throw new ApiError(data.error ? t(data.error) : `${t('Request failed')} (${response.status})`, response.status);
   return data;
 }
 
@@ -77,8 +86,10 @@ export const api = {
 
 /** Downloads a protected file through fetch so the bearer token travels with it. */
 export async function downloadFile(url, filename) {
-  const response = await fetch(url, { headers: auth.token ? { Authorization: `Bearer ${auth.token}` } : {} });
-  if (!response.ok) throw new ApiError('Download failed', response.status);
+  let response;
+  try { response = await fetch(url, { headers: auth.token ? { Authorization: `Bearer ${auth.token}` } : {} }); }
+  catch { throw new ApiError(t('Could not reach the server. Check your connection and try again.'), 0); }
+  if (!response.ok) throw new ApiError(t('Download failed'), response.status);
   const blob = await response.blob();
   const link = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: filename });
   document.body.append(link);

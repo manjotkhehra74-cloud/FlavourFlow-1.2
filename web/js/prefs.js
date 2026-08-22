@@ -1,3 +1,5 @@
+import { t as translate } from './i18n.js';
+
 /*
  * Local display preferences. They live in localStorage rather than on the server because
  * they describe this device, not the account — the Flutter client will keep its own copy.
@@ -11,6 +13,7 @@ export const LANGUAGES = [
   { value: 'en', label: 'English' },
 ];
 
+/* Labels are English keys; `labelFor` translates them so a language switch is enough. */
 export const APPEARANCES = [
   { value: 'system', label: 'System' },
   { value: 'light', label: 'Light' },
@@ -37,7 +40,11 @@ export function setPref(key, value) {
   return next;
 }
 
-export const labelFor = (list, value) => list.find((entry) => entry.value === value)?.label ?? value;
+export const labelFor = (list, value) => {
+  const label = list.find((entry) => entry.value === value)?.label ?? value;
+  // Language names stay in their own script; the rest follow the active dictionary.
+  return list === LANGUAGES ? label : translate(label);
+};
 
 /** Reflects the stored preferences onto <html>. Safe to call as often as you like. */
 export function applyPrefs() {

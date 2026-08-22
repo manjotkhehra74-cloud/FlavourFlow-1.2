@@ -1,3 +1,5 @@
+import { localeTag, t } from './i18n.js';
+
 /** Small DOM + formatting helpers shared by every HRMate page. */
 
 export const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => (
@@ -58,8 +60,9 @@ export const avatar = (name, url, className = '') => (url
   ? `<span class="avatar ${className}"><img src="${esc(url)}" alt="${esc(name)}" /></span>`
   : `<span class="avatar ${className}">${esc(initials(name))}</span>`);
 
-export const STATUS_LABEL = { present: 'Present', late: 'Late', half_day: 'Half day', absent: 'Absent', pending: 'Pending', approved: 'Approved', rejected: 'Rejected' };
-export const statusPill = (status) => `<span class="pill pill--${esc(status)}">${esc(STATUS_LABEL[status] || status || '—')}</span>`;
+const STATUS_KEY = { present: 'Present', late: 'Late', half_day: 'Half day', absent: 'Absent', pending: 'Pending', approved: 'Approved', rejected: 'Rejected' };
+export const statusLabel = (status) => (STATUS_KEY[status] ? t(STATUS_KEY[status]) : (status || '—'));
+export const statusPill = (status) => `<span class="pill pill--${esc(status)}">${esc(statusLabel(status))}</span>`;
 
 export const todayIso = () => new Date(Date.now() + (330 + new Date().getTimezoneOffset()) * 60000).toISOString().slice(0, 10);
 export const monthIso = (date = todayIso()) => date.slice(0, 7);
@@ -67,13 +70,13 @@ export const monthIso = (date = todayIso()) => date.slice(0, 7);
 export function formatDate(value, options = { day: 'numeric', month: 'short', year: 'numeric' }) {
   if (!value) return '—';
   const date = new Date(value.length <= 10 ? `${value}T00:00:00` : value);
-  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('en-IN', options);
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString(localeTag(), options);
 }
 
 export function formatTime(value) {
   if (!value) return '—';
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleTimeString(localeTag(), { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
 }
 
 export function relativeTime(value) {
@@ -81,10 +84,10 @@ export function relativeTime(value) {
   const stamp = new Date(value.endsWith('Z') || value.includes('T') ? value : `${value.replace(' ', 'T')}Z`);
   const seconds = Math.round((Date.now() - stamp.getTime()) / 1000);
   if (Number.isNaN(seconds)) return '';
-  if (seconds < 60) return 'just now';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+  if (seconds < 60) return t('just now');
+  if (seconds < 3600) return t('{n}m ago', { n: Math.floor(seconds / 60) });
+  if (seconds < 86400) return t('{n}h ago', { n: Math.floor(seconds / 3600) });
+  if (seconds < 604800) return t('{n}d ago', { n: Math.floor(seconds / 86400) });
   return formatDate(value);
 }
 
@@ -105,12 +108,15 @@ export const shiftMonth = (month, months) => {
 
 export function greeting() {
   const hour = Number(new Date().toLocaleString('en-IN', { hour: 'numeric', hour12: false, timeZone: 'Asia/Kolkata' }));
-  if (hour < 12) return 'Sat Sri Akal';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return t('Sat Sri Akal');
+  if (hour < 17) return t('Good afternoon');
+  return t('Good evening');
 }
 
 export const titleCase = (value) => String(value || '').replaceAll('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+/** titleCase, then translated — used for leave types and roles coming off the API. */
+export const titleCaseT = (value) => t(titleCase(value));
 
 export function toast(message, kind = '') {
   const node = el(`<div class="toast ${kind ? `toast--${kind}` : ''}">${esc(message)}</div>`);
@@ -123,13 +129,13 @@ export function toast(message, kind = '') {
  * `onMount(form, close)` receives the form element and a `close(value)` callback so that
  * action sheets can resolve with something other than form data.
  */
-export function modal({ title, body, submitLabel = 'Save', tone = '', onMount }) {
+export function modal({ title, body, submitLabel = t('Save'), tone = '', onMount }) {
   return new Promise((resolve) => {
     const backdrop = el(`<div class="modal-backdrop"><form class="modal">
       <div class="modal__head"><h3>${esc(title)}</h3><button type="button" class="icon-btn spacer" data-close style="margin-left:auto">${icon('close', 18)}</button></div>
       <div class="modal__body stack">${body}</div>
       <div class="modal__foot">
-        <button type="button" class="btn btn--ghost" data-close>Cancel</button>
+        <button type="button" class="btn btn--ghost" data-close>${esc(t('Cancel'))}</button>
         <button type="submit" class="btn ${tone}">${esc(submitLabel)}</button>
       </div>
     </form></div>`);

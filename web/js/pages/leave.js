@@ -4,6 +4,7 @@ import {
   avatar, emptyState, esc, formatDate, icon, loadingRows, modal, monthIso, qs,
   relativeTime, shiftMonth, statusPill, titleCase, toast, todayIso,
 } from '../ui.js';
+import { t } from '../i18n.js';
 
 export const meta = { key: 'leave', title: 'Leave', subtitle: 'Balances, requests and approvals' };
 
@@ -30,10 +31,10 @@ export async function render(root, context) {
       const balance = data.balance || { casual: 0, sick: 0, earned: 0 };
       host.innerHTML = `
         <section class="hero">
-          <div class="hero__label">Leave balance</div>
-          <h3 style="margin-top:2px">Track your available leave</h3>
+          <div class="hero__label">${esc(t('Leave balance'))}</div>
+          <h3 style="margin-top:2px">${esc(t('Track your available leave'))}</h3>
           <div class="hero__tiles">
-            ${[['Casual leave', balance.casual, 'casual'], ['Sick leave', balance.sick, 'sick'], ['Earned leave', balance.earned, 'earned']]
+            ${[[t('Casual leave'), balance.casual, 'casual'], [t('Sick leave'), balance.sick, 'sick'], [t('Earned leave'), balance.earned, 'earned']]
               .map(([label, value, type]) => `<article class="hero__tile">
                 <span class="stat__icon tone-${TYPE_TONE[type]}">${icon(TYPE_ICON[type])}</span>
                 <small>${label}</small>
@@ -47,21 +48,21 @@ export async function render(root, context) {
         </button>
 
         <section class="card" style="margin-top:16px">
-          <div class="card__head"><h3>Recent requests</h3><span class="muted small spacer">${data.requests.length} total</span></div>
+          <div class="card__head"><h3>${esc(t('Recent requests'))}</h3><span class="muted small spacer">${data.requests.length} total</span></div>
           ${data.requests.length ? `<div class="stack">${data.requests.slice(0, 12).map((request) => `
             <div class="rowcard">
               <span class="rowcard__icon tone-${TYPE_TONE[request.leave_type]}">${icon(TYPE_ICON[request.leave_type])}</span>
               <div class="rowcard__body">
-                <strong>${esc(titleCase(request.leave_type))} leave</strong>
+                <strong>${esc(t('{type} leave', { type: t(titleCase(request.leave_type)) }))}</strong>
                 <small>${icon('attendance', 12)} ${esc(formatDate(request.start_date, { day: '2-digit', month: 'short' }))}${request.start_date === request.end_date ? '' : ` – ${esc(formatDate(request.end_date, { day: '2-digit', month: 'short' }))}`} · ${esc(request.days)} day${request.days === 1 ? '' : 's'}</small>
                 ${request.reviewer_note ? `<small style="display:block">Note: ${esc(request.reviewer_note)}</small>` : ''}
               </div>
               ${statusPill(request.status)}
             </div>`).join('')}</div>`
-            : emptyState('No leave requests yet', 'Apply for casual, sick or earned leave in one tap.')}
+            : emptyState(t('No leave requests yet'), t('Apply for casual, sick or earned leave in one tap.'))}
         </section>`;
       qs('[data-apply]', host)?.addEventListener('click', () => applyLeave(balance, loadMine));
-    } catch (error) { host.innerHTML = emptyState('Could not load leave', error.message); }
+    } catch (error) { host.innerHTML = emptyState(t('Could not load leave'), error.message); }
   }
 
   /* ---------------- approvals ---------------- */
@@ -76,7 +77,7 @@ export async function render(root, context) {
         ${tiles(data.counts, state.view)}
         <section class="card" style="margin-top:16px">
           <div class="card__head">
-            <h3>${state.view === 'pending' ? 'Leave approvals' : `${titleCase(state.view)} requests`}</h3>
+            <h3>${esc(state.view === 'pending' ? t('Leave approvals') : t('{status} requests', { status: t(titleCase(state.view)) }))}</h3>
             <span class="muted small spacer">${data.requests.length} request${data.requests.length === 1 ? '' : 's'}${state.view === 'pending' ? ' awaiting action' : ''}</span>
           </div>
           ${data.requests.length ? `<div class="stack">${data.requests.map(requestCard).join('')}</div>`
@@ -84,21 +85,21 @@ export async function render(root, context) {
         </section>`;
       wireTiles(host);
       host.querySelectorAll('[data-review]').forEach((button) => button.addEventListener('click', () => reviewLeave(button, host)));
-    } catch (error) { host.innerHTML = emptyState('Could not load approvals', error.message); }
+    } catch (error) { host.innerHTML = emptyState(t('Could not load approvals'), error.message); }
   }
 
   function tiles(counts, active) {
     const items = [
-      { key: 'pending', label: 'Pending', value: counts.pending, tone: 'amber', glyph: 'clock' },
-      { key: 'approved', label: 'Approved', value: counts.approved, tone: 'green', glyph: 'circleCheck' },
-      { key: 'rejected', label: 'Rejected', value: counts.rejected, tone: 'red', glyph: 'circleClose' },
-      { key: 'calendar', label: 'Calendar', value: '', tone: 'blue', glyph: 'attendance' },
+      { key: 'pending', label: t('Pending'), value: counts.pending, tone: 'amber', glyph: 'clock' },
+      { key: 'approved', label: t('Approved'), value: counts.approved, tone: 'green', glyph: 'circleCheck' },
+      { key: 'rejected', label: t('Rejected'), value: counts.rejected, tone: 'red', glyph: 'circleClose' },
+      { key: 'calendar', label: t('Calendar'), value: '', tone: 'blue', glyph: 'attendance' },
     ];
     return `<div class="tiles">${items.map((item) => `
       <button class="tile ${item.key === active ? 'is-active' : ''}" data-view="${item.key}">
         <span class="tile__icon tone-${item.tone}">${icon(item.glyph)}</span>
         <small>${item.label}</small>
-        ${item.value === '' ? '<strong style="font-size:15px;font-weight:600;color:var(--muted)">View month</strong>' : `<strong style="color:${item.tone === 'green' ? '#16a34a' : item.tone === 'red' ? 'var(--red)' : item.tone === 'amber' ? 'var(--amber)' : 'var(--blue)'}">${item.value}</strong>`}
+        ${item.value === '' ? `<strong style="font-size:15px;font-weight:600;color:var(--muted)">${esc(t('View month'))}</strong>` : `<strong style="color:${item.tone === 'green' ? '#16a34a' : item.tone === 'red' ? 'var(--red)' : item.tone === 'amber' ? 'var(--amber)' : 'var(--blue)'}">${item.value}</strong>`}
       </button>`).join('')}</div>`;
   }
 
@@ -116,14 +117,14 @@ export async function render(root, context) {
         ${avatar(request.name, request.photo_url)}
         <div class="list-card__body">
           <strong>${esc(request.name)}</strong>
-          <span class="type">${esc(titleCase(request.leave_type))} leave</span>
+          <span class="type">${esc(t('{type} leave', { type: t(titleCase(request.leave_type)) }))}</span>
           <div class="meta">${icon('attendance', 13)} ${esc(formatDate(request.start_date, { day: '2-digit', month: 'short' }))}${request.start_date === request.end_date ? '' : ` – ${esc(formatDate(request.end_date, { day: '2-digit', month: 'short' }))}`} (${esc(request.days)} day${request.days === 1 ? '' : 's'})</div>
           ${request.reason ? `<div class="meta">${esc(request.reason)}</div>` : ''}
           ${request.status !== 'pending' ? `<div class="meta">${statusPill(request.status)} ${request.reviewer_name ? `by ${esc(request.reviewer_name)}` : ''} ${request.reviewed_at ? `· ${esc(relativeTime(request.reviewed_at))}` : ''}</div>` : ''}
         </div>
         ${balance === undefined ? '' : `<div class="list-card__badge">
           ${icon('scale', 16)}
-          <small>Balance</small>
+          <small>${esc(t('Balance'))}</small>
           <strong>${esc(balance)} days</strong>
         </div>`}
       </div>
@@ -140,7 +141,7 @@ export async function render(root, context) {
       title: decision === 'approved' ? 'Approve leave request' : 'Reject leave request',
       submitLabel: decision === 'approved' ? 'Approve' : 'Reject',
       tone: decision === 'approved' ? 'btn--solid-green' : 'btn--red',
-      body: '<div class="field"><label>Note for the employee (optional)</label><textarea name="note" placeholder="Add context for this decision"></textarea></div>',
+      body: `<div class="field"><label>${esc(t('Note for the employee (optional)'))}</label><textarea name="note" placeholder="${esc(t('Add context for this decision'))}"></textarea></div>`,
     });
     if (!result) return;
     try {
@@ -165,7 +166,7 @@ export async function render(root, context) {
       ${tiles({ pending: 0, approved: 0, rejected: 0 }, 'calendar')}
       <section class="card" style="margin-top:16px">
         <div class="card__head">
-          <h3>Team leave calendar</h3>
+          <h3>${esc(t('Team leave calendar'))}</h3>
           <div class="row spacer" style="gap:6px">
             <button class="week__nav" data-cal="-1">${icon('arrowLeft', 16)}</button>
             <span class="small" style="font-weight:600;min-width:104px;text-align:center">${esc(formatDate(`${data.month}-01`, { month: 'long', year: 'numeric' }))}</span>
@@ -181,14 +182,14 @@ export async function render(root, context) {
             const approved = entries.filter((entry) => entry.status === 'approved').length;
             const pending = entries.length - approved;
             return `<div style="border:1px solid var(--line);border-radius:11px;padding:7px 6px;min-height:62px;background:${entries.length ? '#f8fbff' : 'var(--surface)'}"
-              title="${esc(entries.map((entry) => `${entry.name} (${entry.leave_type})`).join(', ') || 'No leave')}">
+              title="${esc(entries.map((entry) => `${entry.name} (${entry.leave_type})`).join(', ') || t('No leave'))}">
               <div class="small" style="font-weight:700">${day}</div>
               ${approved ? `<span class="pill pill--approved" style="padding:1px 7px;font-size:11px;margin-top:4px">${approved}</span>` : ''}
               ${pending ? `<span class="pill pill--pending" style="padding:1px 7px;font-size:11px;margin-top:4px">${pending}</span>` : ''}
             </div>`;
           }).join('')}
         </div>
-        <p class="muted small" style="margin-top:12px">Green counts are approved leave, amber are still pending.</p>
+        <p class="muted small" style="margin-top:12px">${esc(t('Green counts are approved leave, amber are still pending.'))}</p>
       </section>`;
 
     wireTiles(host);
@@ -201,24 +202,24 @@ export async function render(root, context) {
 
 async function applyLeave(balance, onDone) {
   const result = await modal({
-    title: 'Apply for leave',
-    submitLabel: 'Submit request',
+    title: t('Apply for leave'),
+    submitLabel: t('Submit request'),
     tone: 'btn--gradient',
     body: `<div class="form-grid">
-      <div class="field"><label>Leave type</label><select name="leaveType">
+      <div class="field"><label>${esc(t('Leave type'))}</label><select name="leaveType">
         <option value="casual">Casual (${balance.casual ?? 0} left)</option>
         <option value="sick">Sick (${balance.sick ?? 0} left)</option>
         <option value="earned">Earned (${balance.earned ?? 0} left)</option>
       </select></div>
-      <div class="field"><label>From</label><input type="date" name="startDate" value="${todayIso()}" required /></div>
-      <div class="field"><label>To</label><input type="date" name="endDate" value="${todayIso()}" required /></div>
+      <div class="field"><label>${esc(t('From'))}</label><input type="date" name="startDate" value="${todayIso()}" required /></div>
+      <div class="field"><label>${esc(t('To'))}</label><input type="date" name="endDate" value="${todayIso()}" required /></div>
     </div>
-    <div class="field"><label>Reason</label><textarea name="reason" placeholder="Share a short reason for your manager"></textarea></div>`,
+    <div class="field"><label>${esc(t('Reason'))}</label><textarea name="reason" placeholder="${esc(t('Share a short reason for your manager'))}"></textarea></div>`,
   });
   if (!result) return;
   try {
     await api.applyLeave({ ...result, reason: result.reason || null });
-    toast('Leave request submitted', 'ok');
+    toast(t('Leave request submitted'), 'ok');
     onDone?.();
   } catch (error) { toast(error.message, 'err'); }
 }

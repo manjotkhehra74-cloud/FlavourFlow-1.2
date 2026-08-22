@@ -6,6 +6,7 @@ import {
 } from '../ui.js';
 import { employeeForm } from './employees.js';
 import { manualEntry } from './attendance.js';
+import { t } from '../i18n.js';
 
 export const meta = { key: 'employees', title: 'Employee profile', subtitle: 'Overview, attendance and leave' };
 
@@ -21,15 +22,15 @@ export async function render(root, context, params) {
   root.innerHTML = loadingRows(5);
   let data;
   try { data = await api.employee(id); }
-  catch (error) { root.innerHTML = `<section class="card">${emptyState('Could not load this employee', error.message)}</section>`; return; }
+  catch (error) { root.innerHTML = `<section class="card">${emptyState(t('Could not load this employee'), error.message)}</section>`; return; }
 
   const { employee, attendance, balance, leaves, account, counts } = data;
 
   root.innerHTML = `
     <div class="row" style="gap:8px">
-      <a class="icon-btn" href="#/employees" title="Back to directory">${icon('arrowLeft')}</a>
-      <h3 style="font-size:17px">Employee profile</h3>
-      ${canManage ? `<button class="icon-btn spacer" data-edit title="Edit employee">${icon('settings')}</button>` : ''}
+      <a class="icon-btn" href="#/employees" title="${esc(t('Back to directory'))}">${icon('arrowLeft')}</a>
+      <h3 style="font-size:17px">${esc(t('Employee profile'))}</h3>
+      ${canManage ? `<button class="icon-btn spacer" data-edit title="${esc(t('Edit employee'))}">${icon('settings')}</button>` : ''}
     </div>
 
     <section class="hero">
@@ -40,10 +41,10 @@ export async function render(root, context, params) {
         <div style="min-width:0">
           <h2 style="font-size:26px;letter-spacing:-.03em">${esc(employee.name)}</h2>
           <div class="row" style="gap:8px;margin-top:8px">
-            <span class="pill" style="background:rgba(255,255,255,.22);color:#fff">${icon('users', 13)} ${esc(employee.employee_code || 'No code')}</span>
+            <span class="pill" style="background:rgba(255,255,255,.22);color:#fff">${icon('users', 13)} ${esc(employee.employee_code || t('No code'))}</span>
           </div>
           <div class="row" style="gap:6px;margin-top:8px;font-size:13.5px;opacity:.92">
-            ${icon('employees', 14)} ${esc(employee.department || 'Unassigned')} · ${esc(employee.shift_name || 'No shift')}
+            ${icon('employees', 14)} ${esc(employee.department || t('Unassigned'))} · ${esc(employee.shift_name || t('No shift'))}
           </div>
           <span class="pill" style="background:rgba(255,255,255,.95);color:#15803d;margin-top:10px">
             <i style="width:7px;height:7px;border-radius:50%;background:#16a34a;display:inline-block"></i> Active
@@ -84,11 +85,11 @@ export async function render(root, context, params) {
 
   function paintOverview() {
     const rows = [
-      { label: 'Phone', value: employee.phone || 'Not recorded', glyph: 'clock', tone: 'blue', href: employee.phone ? `tel:${employee.phone}` : null },
-      { label: 'Joined', value: formatDate(employee.join_date), glyph: 'attendance', tone: 'green' },
-      { label: 'Department', value: employee.department || 'Unassigned', glyph: 'employees', tone: 'violet' },
-      { label: 'Designation', value: employee.role_title || 'Not set', glyph: 'users', tone: 'amber' },
-      { label: 'Login account', value: account ? `${account.name} · ${titleCase(account.role)}` : 'Not linked — cannot punch in', glyph: 'shield', tone: account ? 'green' : 'red' },
+      { label: t('Phone'), value: employee.phone || t('Not recorded'), glyph: 'clock', tone: 'blue', href: employee.phone ? `tel:${employee.phone}` : null },
+      { label: t('Joined'), value: formatDate(employee.join_date), glyph: 'attendance', tone: 'green' },
+      { label: t('Department'), value: employee.department || t('Unassigned'), glyph: 'employees', tone: 'violet' },
+      { label: t('Designation'), value: employee.role_title || t('Not set'), glyph: 'users', tone: 'amber' },
+      { label: t('Login account'), value: account ? `${account.name} · ${t(titleCase(account.role))}` : t('Not linked — cannot punch in'), glyph: 'shield', tone: account ? 'green' : 'red' },
     ];
     tabBody.innerHTML = `<div class="stack">${rows.map((row) => `
       <${row.href ? `a href="${esc(row.href)}"` : 'div'} class="rowcard" style="color:inherit">
@@ -102,13 +103,13 @@ export async function render(root, context, params) {
   function paintAttendance() {
     tabBody.innerHTML = `
       <div class="summary" style="margin-bottom:16px">
-        <div><strong class="t-green">${counts.present}</strong><small>Present</small></div>
-        <div><strong class="t-amber">${counts.late}</strong><small>Late</small></div>
-        <div><strong class="t-blue">${counts.half_day}</strong><small>Half day</small></div>
-        <div><strong class="t-grey">${counts.absent}</strong><small>Absent</small></div>
+        <div><strong class="t-green">${counts.present}</strong><small>${esc(t('Present'))}</small></div>
+        <div><strong class="t-amber">${counts.late}</strong><small>${esc(t('Late'))}</small></div>
+        <div><strong class="t-blue">${counts.half_day}</strong><small>${esc(t('Half day'))}</small></div>
+        <div><strong class="t-grey">${counts.absent}</strong><small>${esc(t('Absent'))}</small></div>
       </div>
       ${attendance.length ? `<div class="table-wrap"><table>
-        <thead><tr><th>Date</th><th>Status</th><th>In</th><th>Out</th><th>Source</th></tr></thead>
+        <thead><tr><th>${esc(t('Date'))}</th><th>${esc(t('Status'))}</th><th>${esc(t('In'))}</th><th>${esc(t('Out'))}</th><th>${esc(t('Source'))}</th></tr></thead>
         <tbody>${attendance.map((record) => `<tr>
           <td>${esc(formatDate(record.attendance_date, { weekday: 'short', day: '2-digit', month: 'short' }))}</td>
           <td>${statusPill(record.status)}</td>
@@ -116,13 +117,13 @@ export async function render(root, context, params) {
           <td>${esc(formatTime(record.punch_out_at))}</td>
           <td><span class="pill">${esc(record.entry_source || 'mobile')}</span></td>
         </tr>`).join('')}</tbody></table></div>`
-        : emptyState('No attendance yet', 'Punches and manual entries will appear here.')}`;
+        : emptyState(t('No attendance yet'), t('Punches and manual entries will appear here.'))}`;
   }
 
   function paintLeave() {
     tabBody.innerHTML = `
       ${balance ? `<div class="tiles" style="margin-bottom:16px">
-        ${[['Casual', balance.casual, 'casual'], ['Sick', balance.sick, 'sick'], ['Earned', balance.earned, 'earned']].map(([label, value, type]) => `
+        ${[[t('Casual'), balance.casual, 'casual'], [t('Sick'), balance.sick, 'sick'], [t('Earned'), balance.earned, 'earned']].map(([label, value, type]) => `
           <div class="tile" style="cursor:default">
             <span class="tile__icon tone-${TYPE_TONE[type]}">${icon(TYPE_ICON[type])}</span>
             <small>${label}</small><strong>${esc(value)}<span style="font-size:13px;color:var(--muted);font-weight:600"> days</span></strong>
@@ -132,11 +133,11 @@ export async function render(root, context, params) {
         <div class="rowcard">
           <span class="rowcard__icon tone-${TYPE_TONE[leave.leave_type]}">${icon(TYPE_ICON[leave.leave_type])}</span>
           <div class="rowcard__body">
-            <strong>${esc(titleCase(leave.leave_type))} leave</strong>
+            <strong>${esc(t('{type} leave', { type: t(titleCase(leave.leave_type)) }))}</strong>
             <small>${esc(formatDate(leave.start_date, { day: '2-digit', month: 'short' }))}${leave.start_date === leave.end_date ? '' : ` – ${esc(formatDate(leave.end_date, { day: '2-digit', month: 'short' }))}`} · ${esc(leave.days)} day${leave.days === 1 ? '' : 's'}${leave.reviewer_name ? ` · ${esc(leave.reviewer_name)}` : ''}</small>
           </div>
           ${statusPill(leave.status)}
         </div>`).join('')}</div>`
-        : emptyState('No leave requests', 'Approved and pending leave will be listed here.')}`;
+        : emptyState(t('No leave requests'), t('Approved and pending leave will be listed here.'))}`;
   }
 }
