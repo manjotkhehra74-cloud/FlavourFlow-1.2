@@ -32,16 +32,25 @@ Two rules are enforced by the API and cannot be clicked around:
 - HRMate always keeps at least one active `super_admin`.
 
 **From the VPS (everyone is locked out).** `tools/reset-credentials.js` works directly on
-the database, so it needs no password:
+the database, so it needs no password. Always launch it through `tools/hrmate-cli.sh`:
 
 ```bash
-cd /opt/hrmate/server
-set -a && source /etc/hrmate.env && set +a
+cli=/opt/hrmate/server/tools/hrmate-cli.sh
 
-node tools/reset-credentials.js --list
-node tools/reset-credentials.js --id 1 --password 'a-new-long-password'
-node tools/reset-credentials.js --id 1 --new-phone '+91XXXXXXXXXX'
-node tools/reset-credentials.js --id 1 --activate
+sudo $cli tools/reset-credentials.js --list
+sudo $cli tools/reset-credentials.js --id 1 --password 'a-new-long-password'
+sudo $cli tools/reset-credentials.js --id 1 --new-phone '+91XXXXXXXXXX'
+sudo $cli tools/reset-credentials.js --id 1 --activate
+```
+
+The wrapper exists because three things go wrong when these scripts are run by hand:
+`/etc/hrmate.env` is root-only so `source` fails, a login shell usually finds Node 24
+instead of the pinned Node 20, and writing as root leaves the SQLite files owned by root.
+`hrmate-cli.sh` loads the environment as root, pins `/opt/node20/bin`, then drops to the
+service account, so the database keeps its owner. Run any maintenance script through it:
+
+```bash
+sudo $cli tools/close-attendance-day.js
 ```
 
 Sign in afterwards and change the password again from **Settings**, so the one typed on a

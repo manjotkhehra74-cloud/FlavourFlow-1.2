@@ -68,9 +68,9 @@ export async function render(root, context) {
       <div class="card__head"><h3>Locked out of an account?</h3></div>
       <p class="muted small">A super admin or HR manager can reset any password from <a href="#/users">Users</a>.
       If every administrator is locked out, run this once on the VPS:</p>
-      <pre class="small" style="background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px;overflow:auto;margin-top:10px">cd /opt/hrmate/server
-node tools/reset-credentials.js --list
-node tools/reset-credentials.js --id 1 --password 'a-new-long-password'</pre>
+      <pre class="small" style="background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px;overflow:auto;margin-top:10px">cli=/opt/hrmate/server/tools/hrmate-cli.sh
+sudo $cli tools/reset-credentials.js --list
+sudo $cli tools/reset-credentials.js --id 1 --password 'a-new-long-password'</pre>
     </section>`;
 
   const profileForm = qs('[data-profile]', root);

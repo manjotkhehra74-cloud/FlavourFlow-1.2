@@ -1,21 +1,42 @@
 import 'dotenv/config';
+import fs from 'node:fs';
+import path from 'node:path';
 import bcrypt from 'bcryptjs';
-import { db } from '../src/db/index.js';
 
 /**
  * Account recovery from the VPS shell, for when a phone number or password is lost.
  *
- * List every account:
- *   node tools/reset-credentials.js --list
+ * On the VPS always go through the wrapper, which loads /etc/hrmate.env, pins Node 20
+ * and runs as the service account:
  *
- * Reset one account (identify it by id or by its current phone):
- *   node tools/reset-credentials.js --id 1 --password 'a-new-long-password'
- *   node tools/reset-credentials.js --phone '+91XXXXXXXXXX' --new-phone '+91YYYYYYYYYY' --password '...'
+ *   sudo /opt/hrmate/server/tools/hrmate-cli.sh tools/reset-credentials.js --list
+ *   sudo /opt/hrmate/server/tools/hrmate-cli.sh tools/reset-credentials.js --id 1 --password '...'
+ *   sudo /opt/hrmate/server/tools/hrmate-cli.sh tools/reset-credentials.js --id 1 --new-phone '+91...'
+ *   sudo /opt/hrmate/server/tools/hrmate-cli.sh tools/reset-credentials.js --id 1 --activate
  *
- * Nothing here is logged to the audit trail because it runs outside a session; the
+ * Nothing here is written to the audit trail because it runs outside a session, and the
  * password is never printed back.
  */
+
+// Point at the live database explicitly: silently creating an empty one in the current
+// directory would look like "all the accounts disappeared".
+const databasePath = process.env.DATABASE_PATH;
+if (!databasePath) {
+  console.error('DATABASE_PATH is not set, so there is no database to read.');
+  console.error('On the VPS run this through the wrapper, which loads /etc/hrmate.env:');
+  console.error('  sudo /opt/hrmate/server/tools/hrmate-cli.sh tools/reset-credentials.js --list');
+  process.exit(1);
+}
+if (!fs.existsSync(databasePath)) {
+  console.error(`No database at ${path.resolve(databasePath)}.`);
+  console.error('Check DATABASE_PATH in /etc/hrmate.env, or create the first account with: npm run bootstrap:admin');
+  process.exit(1);
+}
+
+const { db } = await import('../src/db/index.js');
+
 const args = process.argv.slice(2);
+
 const flag = (name) => {
   const index = args.indexOf(`--${name}`);
   return index === -1 ? undefined : args[index + 1];
@@ -26,14 +47,16 @@ const accounts = db.prepare('SELECT id, name, phone, email, role, active FROM us
 
 if (has('list') || args.length === 0) {
   if (!accounts.length) {
-    console.log('No accounts exist yet. Create the first one with: npm run bootstrap:admin');
+    console.log(`No accounts exist in ${path.resolve(databasePath)}.`);
+    console.log('Create the first one with: npm run bootstrap:admin');
     process.exit(0);
   }
   console.log('HRMate accounts:\n');
   accounts.forEach((user) => {
     console.log(`  id ${String(user.id).padEnd(3)} ${user.role.padEnd(12)} ${(user.phone || '—').padEnd(16)} ${user.active ? '' : '[disabled] '}${user.name}`);
   });
-  console.log('\nReset one with: node tools/reset-credentials.js --id <id> --password \'new-password\'');
+  console.log('\nReset one with:');
+  console.log('  sudo /opt/hrmate/server/tools/hrmate-cli.sh tools/reset-credentials.js --id <id> --password \'new-password\'');
   process.exit(0);
 }
 

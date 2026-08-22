@@ -12,6 +12,7 @@ ENV_FILE="$ENV_FILE" "$APP_DIR/server/tools/preflight-hrmate.sh"
 node --check src/index.js
 find src -name '*.js' -print0 | xargs -0 -n1 node --check
 npm ci --omit=dev
+sudo chmod 755 "$APP_DIR/server/tools/hrmate-cli.sh"
 sudo install -m 644 "$APP_DIR/server/deploy/hrmate.service" /etc/systemd/system/hrmate.service
 sudo install -m 644 "$APP_DIR/server/deploy/hrmate-attendance-close.service" /etc/systemd/system/hrmate-attendance-close.service
 sudo install -m 644 "$APP_DIR/server/deploy/hrmate-attendance-close.timer" /etc/systemd/system/hrmate-attendance-close.timer
