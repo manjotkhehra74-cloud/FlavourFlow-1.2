@@ -134,9 +134,11 @@ CREATE TABLE shifts (
   start_time TEXT NOT NULL, end_time TEXT NOT NULL,
   crosses_midnight INTEGER NOT NULL DEFAULT 0,
   grace_minutes INTEGER NOT NULL DEFAULT 15,
-  half_day_after_minutes INTEGER NOT NULL DEFAULT 120,
-  min_hours_full_day REAL NOT NULL DEFAULT 8,
+  min_hours_full_day REAL NOT NULL DEFAULT 9,
+  min_hours_half_day REAL NOT NULL DEFAULT 4.5,
   break_minutes INTEGER NOT NULL DEFAULT 30,
+  ot_after_hours REAL NOT NULL DEFAULT 9,          -- s.59
+  night_shift INTEGER NOT NULL DEFAULT 0,
   active INTEGER NOT NULL DEFAULT 1
 );
 CREATE TABLE shift_roster (
@@ -182,6 +184,77 @@ Concrete rules for the punch engine:
 - **Women on night shift** (Factories Act s.66, relaxed by state notification): HRMate
   will require a consent flag on the employee record and warn when a woman is rostered
   to N without it. Transport and security arrangements are the factory's duty.
+
+### 4.2 G.D. Foods' actual shifts and the 12-hour season problem
+
+Confirmed by the client: **Night = 19:00 → 07:00 next morning (12 h)**, and during the
+season the **day shift also runs 12 h (07:00 → 19:00)**.
+
+| code | name | start | end | gross | breaks (s.55) | net work | OT vs 9 h |
+|---|---|---|---|---|---|---|---|
+| G | General | 09:00 | 18:00 | 9 h | 1 × 30 min | 8.5 h | 0 |
+| D | Day (season) | 07:00 | 19:00 | 12 h | 2 × 30 min | 11 h | 2 h |
+| N | Night | 19:00 | 07:00 (+1) | 12 h | 2 × 30 min | 11 h | 2 h |
+
+Two 30-minute breaks are not optional on a 12-hour shift: **s.55 forbids any work period
+longer than 5 hours without a ≥30 min rest**, so a 12-hour shift must be broken as
+5 h + 5 h + the remainder. HRMate stores the break minutes per shift and subtracts them.
+
+**Statutory ceilings that a 12-hour roster hits immediately**
+
+- 12 h/day is *above* the normal 9 h limit (s.54). It is only lawful under an exempting
+  order for **exceptional pressure of work** (s.65(2)), whose hard conditions are:
+  work ≤ **12 h/day**, spread-over ≤ **13 h/day**, ≤ **60 h/week including overtime**,
+  no overtime **more than 7 days at a stretch**, and ≤ **75 overtime hours per quarter**.
+  (Under the alternative route, state rules made under s.64(4), the caps are tighter:
+  10 h/day, 12 h spread-over, 60 h/week, 50 OT hours per quarter.)
+- 19:00 → 07:00 is a 12 h spread-over — inside the 13 h limit. Good.
+- **6 × 12 h = 72 h/week, which is illegal even with the exemption.** At 12-hour shifts
+  the roster can run at most **5 days = 60 h** in a week. The 6th day must be a weekly
+  off; working it is both a comp-off credit *and* a breach of the 60 h cap.
+- 2 h OT × 5 days = **10 OT h/week → the 75 h quarterly ceiling is reached in ~7.5
+  weeks**. A long season needs a second relay, not more overtime.
+- All hours beyond 9 h/day or 48 h/week are payable at **double wages** (s.59).
+
+**What HRMate will therefore compute, per attendance row**
+
+```
+gross      = punch_out − punch_in            (correct across midnight)
+net_hours  = gross − shift.break_minutes
+ot_hours   = max(0, net_hours − 9)           -- daily OT
+weekly_ot  = max(0, Σ net_hours in the week − 48)   -- whichever is greater is paid
+status     : net ≥ min_hours_full_day (9)  → present
+             net ≥ min_hours_half_day (4.5) → half_day
+             otherwise                      → absent
+late       = punch_in > expected_in + grace  (19:15 for N, 07:15 for D)
+```
+
+`ot_hours` is stored on the row, so the monthly register and the Excel/PDF export can
+carry an **OT hours column** and a quarter-to-date OT total per worker — which is what
+the Form-Ⅳ overtime register needs anyway.
+
+**Live compliance warnings** (shown on the roster and register screens, not blocking):
+
+| condition | warning |
+|---|---|
+| week's total > 60 h | over the s.65(3) weekly ceiling |
+| 6 twelve-hour days rostered in a week | reduce to 5 or the week is illegal |
+| OT on 8 consecutive days | s.65(3)(iv) — 7 days at a stretch is the limit |
+| quarter OT > 75 h (or > 50 h on the s.64 route) | quarterly ceiling breached |
+| 10 consecutive days without a whole holiday | s.52(2) |
+| gap between two rostered shifts < 12 h | rotation too tight — double-shift risk |
+| N → D turnaround on the same date | blocked: that is a 24-hour stretch |
+
+**Season switching.** Moving a department from `G` to `D`/`N` for a date range is one
+action on the roster screen: pick the department, pick the date range, pick the pattern.
+When the season ends, roster the range back to `G`. Nothing is retyped per employee, and
+because every attendance row snapshots its own `shift_id` and `expected_in`, the
+off-season history keeps being judged against 09:00 while season rows use 07:00/19:00.
+
+**Weekly off with a night shift.** The off applies to the *roster date*. If Sunday is a
+worker's weekly off, there is simply no shift dated Sunday — his last shift is
+Sat 19:00 → Sun 07:00 and the next is Mon 19:00, giving a genuine 36-hour rest. The
+register marks Sunday **W**, never absent.
 
 ---
 
