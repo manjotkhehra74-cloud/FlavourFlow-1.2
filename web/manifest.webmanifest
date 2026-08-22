@@ -1,0 +1,12 @@
+{
+  "name": "HRMate — HR console",
+  "short_name": "HRMate",
+  "description": "Attendance, leave and employee management for G.D. Foods Mfg (I) Pvt. Ltd.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f7fc",
+  "theme_color": "#1e6fe0",
+  "icons": [
+    { "src": "/assets/hrmate-logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

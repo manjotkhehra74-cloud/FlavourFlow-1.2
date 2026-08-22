@@ -1,6 +1,45 @@
 version: 2.1
 
 jobs:
+  api-and-web:
+    docker:
+      - image: cimg/node:20.18
+    working_directory: ~/project
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - hrmate-npm-v1-{{ checksum "server/package-lock.json" }}
+            - hrmate-npm-v1-
+      - run:
+          name: Install API dependencies
+          command: cd server && npm ci
+      - save_cache:
+          key: hrmate-npm-v1-{{ checksum "server/package-lock.json" }}
+          paths:
+            - ~/.npm
+      - run:
+          name: Syntax check the API and the web console
+          command: |
+            cd server
+            npm run check
+            for file in $(find ../web/js -name '*.js'); do
+              node --input-type=module --check < "$file" > /dev/null
+            done
+      - run:
+          name: Boot the server and smoke test the API and console
+          command: |
+            cd server
+            export DATABASE_PATH=./data/ci.sqlite JWT_SECRET=ci-only-secret PORT=3101
+            node tools/seed-demo.js
+            node src/index.js &
+            for attempt in $(seq 1 30); do
+              curl --silent --fail http://127.0.0.1:3101/health && break
+              sleep 1
+            done
+            SMOKE_ADMIN_PHONE='+919000000001' SMOKE_ADMIN_PASSWORD='demo-password-123' \
+              API_URL=http://127.0.0.1:3101/api/v1 bash tools/smoke-api.sh
+
   android-apk:
     docker:
       - image: cimg/android:2024.01
@@ -76,6 +115,9 @@ jobs:
           destination: HRMate.apk
 
 workflows:
+  verify:
+    jobs:
+      - api-and-web
   build-android:
     jobs:
       - android-apk

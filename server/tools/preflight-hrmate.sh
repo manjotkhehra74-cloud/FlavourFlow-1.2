@@ -18,4 +18,7 @@ find src -name '*.js' -print0 | xargs -0 -n1 node --check
 bash -n tools/deploy-hrmate.sh
 bash -n tools/backup-hrmate.sh
 bash -n tools/smoke-api.sh
+WEB_ROOT="${WEB_ROOT:-$(cd .. && pwd)/web}"
+[ -f "$WEB_ROOT/index.html" ] || { echo "Web console missing at $WEB_ROOT"; exit 1; }
+[ -f "$WEB_ROOT/js/app.js" ] || { echo "Web console assets missing at $WEB_ROOT/js"; exit 1; }
 echo "HRMate preflight VERIFIED ✓"

@@ -1,10 +1,21 @@
-import Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
 
+// Production uses better-sqlite3 on Node 20; the node:sqlite adapter is a dev-only fallback.
+async function openDatabase(file) {
+  try {
+    const { default: Database } = await import('better-sqlite3');
+    return new Database(file);
+  } catch (error) {
+    console.warn(`better-sqlite3 unavailable (${error.code || error.message}) — using the node:sqlite development fallback`);
+    const { default: FallbackDatabase } = await import('./sqlite-fallback.js');
+    return new FallbackDatabase(file);
+  }
+}
+
 const databasePath = process.env.DATABASE_PATH || './data/hrmate.sqlite';
 fs.mkdirSync(path.dirname(databasePath), { recursive: true });
-export const db = new Database(databasePath);
+export const db = await openDatabase(databasePath);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 

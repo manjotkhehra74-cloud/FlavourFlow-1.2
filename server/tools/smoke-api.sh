@@ -14,4 +14,10 @@ token="$(curl --fail --silent --show-error -X POST "$API_URL/auth/login" \
 [ -n "$token" ]
 curl --fail --silent --show-error "$API_URL/auth/me" -H "Authorization: Bearer $token" >/dev/null
 curl --fail --silent --show-error "$API_URL/meta/navigation" >/dev/null
-echo "HRMate API smoke test VERIFIED ✓"
+curl --fail --silent --show-error "$API_URL/dashboard" -H "Authorization: Bearer $token" >/dev/null
+
+# Web console: the SPA shell and its entry script must be served by the same origin.
+console="$(curl --fail --silent --show-error "${API_URL%/api/v1}/")"
+printf '%s' "$console" | grep -q 'id="app"'
+curl --fail --silent --show-error --output /dev/null "${API_URL%/api/v1}/js/app.js"
+echo "HRMate API + web console smoke test VERIFIED ✓"

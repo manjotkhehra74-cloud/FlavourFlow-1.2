@@ -2,7 +2,7 @@
 
 A practical HRMS for manufacturing teams, beginning with **G.D. Foods Mfg (I) Pvt. Ltd.** in Khadur Sahib, Tarn Taran, Punjab.
 
-HRMate will help teams manage employee records, GPS/selfie attendance, leave workflows, and monthly attendance reports. The product is being built as a Flutter client with a Node.js, Express, and SQLite backend.
+HRMate helps teams manage employee records, GPS/selfie attendance, leave workflows, and monthly attendance reports. It ships as a browser console plus a Flutter client, both on one Node.js, Express, and SQLite backend.
 
 ## Phase 1
 
@@ -13,16 +13,32 @@ HRMate will help teams manage employee records, GPS/selfie attendance, leave wor
 - Role-based access for `super_admin`, `hr_manager`, `supervisor`, and `employee`
 - Permission-gated navigation and audited broadcast notifications
 
-## Planned stack
+## Stack
 
-- **Mobile:** Flutter (Android first)
-- **API:** Node.js + Express
+- **Web console:** dependency-free ES modules served by the API — see [`web/`](web/README.md)
+- **Mobile:** Flutter (Android first) — see [`mobile/`](mobile/README.md)
+- **API:** Node.js 20 + Express — see [`server/`](server/README.md)
 - **Database:** SQLite via `better-sqlite3`
-- **Deployment:** dedicated GCP VPS service and database
+- **Deployment:** dedicated GCP VPS behind Caddy at `https://hrmate.duckdns.org`
+
+## Run it locally
+
+```bash
+cd server
+npm install
+DATABASE_PATH=./data/demo.sqlite node tools/seed-demo.js     # optional demo data
+DATABASE_PATH=./data/demo.sqlite JWT_SECRET=local-dev-secret npm run dev
+```
+
+Then open http://localhost:3101 — the console and the API share one origin, so there is
+no CORS or proxy setup in development.
 
 ## Status
 
-Fresh project setup in progress. The initial logo is the next approval milestone, followed by the Flutter and server foundations.
+- ✅ API, SQLite schema, RBAC, audit log and notifications
+- ✅ Web console: dashboard, attendance, leave, employees, reports, users, notifications
+- ✅ Live on the GCP VPS behind Caddy with TLS
+- ⏳ Flutter client wiring against the live API
 
 ---
 
