@@ -58,7 +58,7 @@ async function showShell() {
   root.append(el(`<div class="shell">
     <aside class="sidebar">
       <div class="sidebar__brand">
-        <img src="/assets/hrmate-logo.png" alt="" />
+        <img src="/assets/hrmate-mark.png" alt="" />
         <span><strong>${esc(t('HRMate'))}</strong><small>${esc(t('G.D. Foods Mfg (I)'))}</small></span>
       </div>
       <nav class="nav">

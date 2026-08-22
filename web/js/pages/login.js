@@ -13,7 +13,7 @@ export function renderLogin(root, onSuccess) {
   root.append(el(`<div class="login">
     <aside class="login__hero">
       <div class="login__brand">
-        <img src="/assets/hrmate-logo.png" alt="" />
+        <img src="/assets/hrmate-mark.png" alt="" />
         <strong>${esc(t('HRMate'))}</strong>
       </div>
       <div class="login__pitch">
@@ -32,7 +32,7 @@ export function renderLogin(root, onSuccess) {
     <main class="login__panel">
       <form class="login__card stack" novalidate>
         <div class="login__mobile-brand">
-          <img src="/assets/hrmate-logo.png" alt="" />
+          <img src="/assets/hrmate-mark.png" alt="" />
           <strong>${esc(t('HRMate'))}</strong>
         </div>
 
